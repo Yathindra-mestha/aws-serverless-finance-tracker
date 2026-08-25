@@ -149,7 +149,7 @@ const redirectUri = isLocal ? 'http://localhost:3000/' : 'https://fintrack-yathi
 
 const oidcConfig = {
   authority: "https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_B1MTK1D8V",
-  client_id: "6d4m6tc2rau53b1om0ctangta4",
+  client_id: "7m94kecke7n9h6g4216e4cgg0o",
   redirect_uri: redirectUri,
   response_type: "code",
   scope: "email openid phone",

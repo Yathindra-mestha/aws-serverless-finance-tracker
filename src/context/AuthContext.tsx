@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     if (oidc.isAuthenticated) {
-      const clientId = "6d4m6tc2rau53b1om0ctangta4";
+      const clientId = "7m94kecke7n9h6g4216e4cgg0o";
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const logoutUri = isLocal ? 'http://localhost:3000/' : 'https://fintrack-yathindra.vercel.app/';
       // Extract Cognito Domain from authority by replacing cognito-idp with auth and adding the prefix
