@@ -52,16 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [oidc.isAuthenticated, oidc.isLoading, oidc.user]);
 
   const login = async () => {
-    // Manual redirect to test if oidc-client-ts is adding invalid params (like PKCE or + spaces)
-    const clientId = "6d4m6tc2rau53b1om0ctangta4";
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const redirectUri = isLocal ? 'http://localhost:3000/' : 'https://fintrack-yathindra.vercel.app/';
-    const domain = "https://ap-south-1b1mtk1d8v.auth.ap-south-1.amazoncognito.com";
-    
-    // Explicitly using %20 for spaces to avoid + symbol issues
-    const url = `${domain}/oauth2/authorize?client_id=${clientId}&response_type=code&scope=email%20openid%20phone&redirect_uri=${encodeURIComponent(redirectUri)}`;
-    
-    window.location.href = url;
+    await oidc.signinRedirect();
   };
 
   const loginDemo = async () => {
