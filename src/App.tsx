@@ -144,10 +144,13 @@ const MainLayout: React.FC = () => {
 // ── Root ─────────────────────────────────────────────────────
 import { AuthProvider as OidcProvider } from 'react-oidc-context';
 
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const redirectUri = isLocal ? 'http://localhost:3000/' : 'https://fintrack-yathindra.vercel.app/';
+
 const oidcConfig = {
-  authority: (import.meta as any).env.VITE_COGNITO_AUTHORITY,
-  client_id: (import.meta as any).env.VITE_COGNITO_CLIENT_ID,
-  redirect_uri: (import.meta as any).env.VITE_APP_URL || (window.location.origin + (window.location.origin.includes('localhost') ? '' : '/')),
+  authority: "https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_B1MTK1D8V",
+  client_id: "6d4m6tc2rau53b1om0ctangta4",
+  redirect_uri: redirectUri,
   response_type: "code",
   scope: "email openid phone",
   onSigninCallback: () => {

@@ -68,8 +68,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     if (oidc.isAuthenticated) {
-      const clientId = (import.meta as any).env.VITE_COGNITO_CLIENT_ID;
-      const logoutUri = (import.meta as any).env.VITE_APP_URL || (window.location.origin + (window.location.origin.includes('localhost') ? '' : '/'));
+      const clientId = "6d4m6tc2rau53b1om0ctangta4";
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const logoutUri = isLocal ? 'http://localhost:3000/' : 'https://fintrack-yathindra.vercel.app/';
       // Extract Cognito Domain from authority by replacing cognito-idp with auth and adding the prefix
       // Alternatively, we can use the domain from env if provided, but let's hardcode the one from the screenshot for safety
       const cognitoDomain = "https://ap-south-1b1mtk1d8v.auth.ap-south-1.amazoncognito.com";
