@@ -4,7 +4,7 @@ export const INITIAL_USER: UserProfile = {
   id: 'usr_aws_demo_01',
   email: 'alex.cloud.dev@example.com',
   name: 'Alex Rivera',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  avatar: 'https://ui-avatars.com/api/?name=Alex+Rivera&background=6366f1&color=fff&size=150&bold=true',
   currency: 'INR',
   currencySymbol: '₹',
   monthlyBudget: 0,

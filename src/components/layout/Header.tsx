@@ -141,17 +141,27 @@ export const Header: React.FC<HeaderProps> = ({
                 AWS Blueprint
               </button>
 
-              {/* Avatar (Click to Logout) */}
+              {/* User Profile / Click to Sign Out */}
               <button
                 onClick={() => user && logout()}
-                title="Click to sign out"
-                className="w-8 h-8 rounded-[10px] overflow-hidden ring-1 ring-white/10 hover:ring-rose-500/50 hover:opacity-80 transition-all cursor-pointer flex-shrink-0"
+                title={`${user?.name || user?.email || 'User'} (Click to sign out)`}
+                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-[10px] bg-white/[0.035] border border-white/[0.06] hover:border-rose-500/40 hover:bg-rose-500/10 transition-all cursor-pointer flex-shrink-0 group"
               >
-                <img
-                  src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=6366f1&color=fff&size=64&bold=true&font-size=0.4`}
-                  alt={user?.name || 'User'}
-                  className="w-full h-full object-cover"
-                />
+                <div className="w-7 h-7 rounded-[8px] overflow-hidden ring-1 ring-white/10 flex-shrink-0 bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-[11px] font-bold">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.name || 'User'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    (user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()
+                  )}
+                </div>
+                <span className="hidden sm:inline text-[12px] font-semibold text-slate-300 group-hover:text-rose-300 transition-colors max-w-[110px] truncate">
+                  {user?.name || user?.email?.split('@')[0] || 'Account'}
+                </span>
               </button>
 
               {/* Mobile menu */}
