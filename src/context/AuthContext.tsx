@@ -68,11 +68,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     if (oidc.isAuthenticated) {
-      await oidc.signoutRedirect();
+      const clientId = (import.meta as any).env.VITE_COGNITO_CLIENT_ID;
+      const logoutUri = (import.meta as any).env.VITE_APP_URL || (window.location.origin + (window.location.origin.includes('localhost') ? '' : '/'));
+      // Extract Cognito Domain from authority by replacing cognito-idp with auth and adding the prefix
+      // Alternatively, we can use the domain from env if provided, but let's hardcode the one from the screenshot for safety
+      const cognitoDomain = "https://ap-south-1b1mtk1d8v.auth.ap-south-1.amazoncognito.com";
+      
+      // Clear local session first
+      oidc.removeUser();
+      setUser(null);
+      
+      // Redirect to Cognito logout
+      window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
     } else {
       setUser(null);
+      showToast('info', 'Logged Out', 'Your session has ended securely.');
     }
-    showToast('info', 'Logged Out', 'Your session has ended securely.');
   };
 
   const updateUser = async (updates: Partial<UserProfile>) => {

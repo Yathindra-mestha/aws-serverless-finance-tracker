@@ -149,7 +149,7 @@ const oidcConfig = {
   client_id: (import.meta as any).env.VITE_COGNITO_CLIENT_ID,
   redirect_uri: (import.meta as any).env.VITE_APP_URL || (window.location.origin + (window.location.origin.includes('localhost') ? '' : '/')),
   response_type: "code",
-  scope: "openid email phone",
+  scope: "email openid phone",
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
