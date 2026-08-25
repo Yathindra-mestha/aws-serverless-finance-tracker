@@ -162,6 +162,7 @@ const MainLayout: React.FC = () => {
 
 // ── Root ─────────────────────────────────────────────────────
 import { AuthProvider as OidcProvider } from 'react-oidc-context';
+import { WebStorageStateStore } from 'oidc-client-ts';
 
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const redirectUri = isLocal ? 'http://localhost:3000/' : 'https://fintrack-yathindra.vercel.app/';
@@ -172,6 +173,8 @@ const oidcConfig = {
   redirect_uri: redirectUri,
   response_type: "code",
   scope: "email openid phone",
+  userStore: new WebStorageStateStore({ store: window.localStorage }),
+  automaticSilentRenew: true,
   onSigninCallback: () => {
     window.history.replaceState({}, document.title, window.location.pathname);
   }
