@@ -201,7 +201,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     >
                       {isIncome ? '+' : '−'}{formatCurrency(tx.amount, code, sym)}
                     </span>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onEditTransaction(tx)}
                         className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 hover:bg-white/[0.08] transition-colors"

@@ -109,18 +109,18 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                     </p>
                   </div>
 
-                  {/* Quick Action Icons */}
-                  <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+                  {/* Actions - visible on mobile, or on hover on desktop */}
+                  <div className="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => onEditTransaction(tx)}
-                      className="p-1 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                      className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-slate-700 transition-colors"
                       title="Edit Transaction"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteTransaction(tx)}
-                      className="p-1 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-rose-400 transition-colors"
+                      className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                       title="Delete Transaction"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

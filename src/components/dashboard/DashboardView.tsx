@@ -222,12 +222,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Progress bar row */}
-        <div className="flex items-center gap-3">
-          <span className="text-[12px] text-slate-500 font-medium shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex justify-between items-center sm:hidden w-full mb-1">
+            <span className="text-[12px] text-slate-500 font-medium shrink-0">
+              Spent: <span className="font-mono font-bold text-white">{formatCurrency(totalExpenses, code, sym)}</span>
+            </span>
+            <span className="text-[12px] text-slate-500 font-medium shrink-0">
+              Budget: <span className="font-mono font-bold text-indigo-300">{formatCurrency(monthlyBudget, code, sym)}</span>
+            </span>
+          </div>
+
+          <span className="hidden sm:inline text-[12px] text-slate-500 font-medium shrink-0">
             Spent: <span className="font-mono font-bold text-white">{formatCurrency(totalExpenses, code, sym)}</span>
           </span>
           
-          <div className="flex-1 h-2.5 bg-slate-800/70 rounded-full overflow-hidden border border-white/[0.04]">
+          <div className="w-full sm:flex-1 h-2.5 bg-slate-800/70 rounded-full overflow-hidden border border-white/[0.04]">
             <div
               className={`h-full rounded-full progress-fill transition-all duration-700 ease-out ${
                 budgetStatus === 'danger'  ? 'bg-gradient-to-r from-rose-600 to-red-500' :
@@ -238,7 +247,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             />
           </div>
 
-          <span className="text-[12px] text-slate-500 font-medium shrink-0">
+          <span className="hidden sm:inline text-[12px] text-slate-500 font-medium shrink-0">
             Budget: <span className="font-mono font-bold text-indigo-300">{formatCurrency(monthlyBudget, code, sym)}</span>
           </span>
         </div>
