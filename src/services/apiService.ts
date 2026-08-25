@@ -12,14 +12,22 @@ const getCognitoToken = (): string | null => {
     const authority = (import.meta as any).env.VITE_COGNITO_AUTHORITY;
     const clientId = (import.meta as any).env.VITE_COGNITO_CLIENT_ID;
     const key = `oidc.user:${authority}:${clientId}`;
+    console.log(`[Auth] Looking for Cognito token in localStorage using key: ${key}`);
     const data = localStorage.getItem(key);
+    
     if (data) {
       const parsed = JSON.parse(data);
-      // We use the access_token for API Gateway authorization
-      return parsed.access_token || parsed.id_token || null; 
+      if (parsed.access_token) {
+        console.log('[Auth] Successfully found access_token in localStorage session');
+        return parsed.access_token;
+      } else {
+        console.warn('[Auth] OIDC session found, but no access_token present.');
+      }
+    } else {
+      console.warn('[Auth] No OIDC session found in localStorage.');
     }
   } catch (e) {
-    console.error('Failed to parse Cognito token from storage', e);
+    console.error('[Auth] Failed to parse Cognito token from storage:', e);
   }
   return null;
 };
@@ -33,24 +41,36 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   }
 
   const token = getCognitoToken();
+  if (!token) {
+    console.error(`[API] Cannot execute ${options.method || 'GET'} ${endpoint} - No access_token found`);
+    throw new Error('[UNAUTHORIZED] No valid Cognito access token found. Please sign in.');
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
+    'Authorization': `Bearer ${token}`
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const url = `${API_BASE_URL}${endpoint}`;
+  console.log(`[API] ${options.method || 'GET'} ${url}`);
+  console.log(`[API] Headers:`, { ...headers, Authorization: 'Bearer <REDACTED>' });
+  if (options.body) {
+    console.log(`[API] Payload:`, JSON.parse(options.body as string));
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(url, {
     ...options,
     headers,
   });
+
+  console.log(`[API] Response Status: ${response.status} ${response.statusText}`);
 
   if (!response.ok) {
     let message = 'API Request Failed';
     try {
       const errData = await response.json();
+      console.error(`[API] Error Response Body:`, errData);
       message = errData.message || errData.error || message;
     } catch {
       message = response.statusText || String(response.status);
@@ -63,7 +83,9 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     throw new Error(message);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log(`[API] Response Body:`, data);
+  return data;
 };
 
 /**
@@ -94,11 +116,8 @@ export const ApiService = {
       }
       return [];
     } catch (error: any) {
-      console.warn('API /transactions failed, falling back to local storage', error);
-      if (error.message.includes('[UNAUTHORIZED]')) {
-        throw error; // Let the UI handle logout
-      }
-      return StorageAdapter.getTransactions();
+      console.error('[API] /transactions failed:', error.message);
+      throw error; // DO NOT fallback to StorageAdapter
     }
   },
 
@@ -150,11 +169,8 @@ export const ApiService = {
 
       return mappedTx;
     } catch (error: any) {
-      console.warn('API POST /transactions failed, falling back to local storage', error);
-      if (error.message.includes('[UNAUTHORIZED]')) {
-        throw error;
-      }
-      return StorageAdapter.addTransaction(tx);
+      console.error('[API] POST /transactions failed:', error.message);
+      throw error; // DO NOT fallback to StorageAdapter
     }
   },
 
@@ -194,7 +210,7 @@ export const ApiService = {
   },
 
   async updateBudget(budget: Budget): Promise<Budget> {
-    // Keep local storage for frontend UI state since backend handles category budgets
+    // Keep local storage for frontend UI state since backend only handles category budgets natively
     const saved = await StorageAdapter.saveBudget(budget);
 
     try {
@@ -217,10 +233,8 @@ export const ApiService = {
         });
       }
     } catch (error: any) {
-      console.warn('Failed to sync budgets to AWS API:', error);
-      if (error.message.includes('[UNAUTHORIZED]')) {
-        throw error;
-      }
+      console.error('[API] Failed to sync budgets to AWS API:', error.message);
+      throw error; // Surface the AWS error
     }
 
     return saved;
