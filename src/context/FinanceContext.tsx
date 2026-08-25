@@ -85,7 +85,11 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       setBudget(bgt);
       setNotificationPrefs(prefs);
     } catch (err: any) {
-      showToast('error', 'Failed to fetch data', err.message);
+      if (err.message && err.message.includes('[UNAUTHORIZED]')) {
+        showToast('error', 'Session Expired', 'Please sign in again to access your data.', 6000);
+      } else {
+        showToast('error', 'Failed to fetch data', err.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -284,6 +288,22 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         `${tx.type === 'income' ? 'Income' : 'Expense'} Recorded`,
         `${tx.description} added successfully.`
       );
+
+      // Call AWS API to check budget limit if it's an expense
+      if (tx.type === 'expense') {
+        // Run in background without blocking UI
+        ApiService.checkBudgetAlert(tx.category).then((alertStatus) => {
+          if (alertStatus.alertTriggered) {
+            showToast(
+              'warning',
+              'Budget Alert ⚠️',
+              alertStatus.message || `You've used ${alertStatus.percentageUsed}% of your ${tx.category} budget!`,
+              8000
+            );
+          }
+        }).catch(() => {});
+      }
+
       return created;
     } catch (err: any) {
       showToast('error', 'Failed to add transaction', err.message);
