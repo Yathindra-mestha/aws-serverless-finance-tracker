@@ -23,7 +23,7 @@ const MONTHS = ['2026-08','2026-07','2026-06','2026-05','2026-04','2026-03'];
 export const Header: React.FC<HeaderProps> = ({
   onOpenAwsModal, onOpenAddTxModal, activeTab, setActiveTab,
 }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { activeMonthYear, setActiveMonthYear } = useFinance();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -141,14 +141,18 @@ export const Header: React.FC<HeaderProps> = ({
                 AWS Blueprint
               </button>
 
-              {/* Avatar */}
-              <div className="w-8 h-8 rounded-[10px] overflow-hidden ring-1 ring-white/10 hover:ring-indigo-500/40 transition-all cursor-pointer flex-shrink-0">
+              {/* Avatar (Click to Logout) */}
+              <button
+                onClick={() => user && logout()}
+                title="Click to sign out"
+                className="w-8 h-8 rounded-[10px] overflow-hidden ring-1 ring-white/10 hover:ring-rose-500/50 hover:opacity-80 transition-all cursor-pointer flex-shrink-0"
+              >
                 <img
                   src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=6366f1&color=fff&size=64&bold=true&font-size=0.4`}
                   alt={user?.name || 'User'}
                   className="w-full h-full object-cover"
                 />
-              </div>
+              </button>
 
               {/* Mobile menu */}
               <button

@@ -2,14 +2,14 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { UserProfile } from '../types';
 import { AuthService } from '../services/authService';
 import { useToast } from './ToastContext';
+import { useAuth as useOidcAuth } from 'react-oidc-context';
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: () => Promise<void>;
   loginDemo: () => Promise<void>;
-  signUp: (name: string, email: string, pass: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<UserProfile>) => Promise<void>;
   changeCurrency: (currency: string, symbol: string) => Promise<void>;
@@ -19,71 +19,59 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLocalLoading, setIsLocalLoading] = useState<boolean>(true);
   const { showToast } = useToast();
+  
+  const oidc = useOidcAuth();
 
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const currentUser = await AuthService.getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-        } else {
-          // By default in demo mode, auto-login the demo user for smooth immediate showcase
-          const demo = await AuthService.loginDemo();
-          setUser(demo);
+        if (oidc.isAuthenticated && oidc.user?.profile) {
+          const syncedUser = await AuthService.syncCognitoUser(oidc.user.profile);
+          setUser(syncedUser);
+        } else if (!oidc.isLoading) {
+          const currentUser = await AuthService.getCurrentUser();
+          if (currentUser && currentUser.cognitoSub) {
+            // User was previously logged in but OIDC lost session, let's clear it
+            setUser(null);
+          } else if (currentUser) {
+            // Demo user or local mock
+            setUser(currentUser);
+          }
         }
       } catch (err) {
-        console.error('Failed to initialize auth:', err);
+        console.error('Failed to sync auth:', err);
       } finally {
-        setIsLoading(false);
+        if (!oidc.isLoading) {
+          setIsLocalLoading(false);
+        }
       }
     };
     initAuth();
-  }, []);
+  }, [oidc.isAuthenticated, oidc.isLoading, oidc.user]);
 
-  const login = async (email: string, pass: string) => {
-    setIsLoading(true);
-    try {
-      const loggedUser = await AuthService.login(email, pass);
-      setUser(loggedUser);
-      showToast('success', 'Welcome back!', `Signed in as ${loggedUser.email}`);
-    } catch (err: any) {
-      showToast('error', 'Authentication Failed', err.message || 'Could not sign in');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+  const login = async () => {
+    await oidc.signinRedirect();
   };
 
   const loginDemo = async () => {
-    setIsLoading(true);
+    setIsLocalLoading(true);
     try {
       const demoUser = await AuthService.loginDemo();
       setUser(demoUser);
       showToast('info', 'Demo Mode Activated', 'Loaded preconfigured cloud portfolio dataset.');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signUp = async (name: string, email: string, pass: string) => {
-    setIsLoading(true);
-    try {
-      const newUser = await AuthService.signUp(name, email, pass);
-      setUser(newUser);
-      showToast('success', 'Account Created!', 'Welcome to FinTrack Cloud.');
-    } catch (err: any) {
-      showToast('error', 'Registration Failed', err.message || 'Could not create account');
-      throw err;
-    } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
   };
 
   const logout = async () => {
-    await AuthService.logout();
-    setUser(null);
+    if (oidc.isAuthenticated) {
+      await oidc.signoutRedirect();
+    } else {
+      setUser(null);
+    }
     showToast('info', 'Logged Out', 'Your session has ended securely.');
   };
 
@@ -105,11 +93,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
-        isLoading,
+        isAuthenticated: !!user || oidc.isAuthenticated,
+        isLoading: isLocalLoading || oidc.isLoading || oidc.activeNavigator === 'signinSilent',
         login,
         loginDemo,
-        signUp,
         logout,
         updateUser,
         changeCurrency,
