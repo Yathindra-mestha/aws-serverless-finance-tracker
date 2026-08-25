@@ -12,6 +12,7 @@ import { DeleteConfirmModal } from './components/transactions/DeleteConfirmModal
 import { AwsArchitectureModal } from './components/aws/AwsArchitectureModal';
 import { AwsLiveConsoleDrawer } from './components/aws/AwsLiveConsoleDrawer';
 import { AuthModal } from './components/auth/AuthModal';
+import { ProfileView } from './components/profile/ProfileView';
 import { Transaction, TransactionType } from './types';
 import { Layers, RotateCcw, Shield, Cloud } from 'lucide-react';
 
@@ -94,6 +95,9 @@ const MainLayout: React.FC = () => {
         )}
         {activeTab === 'budget' && (
           <BudgetView />
+        )}
+        {activeTab === 'profile' && (
+          <ProfileView />
         )}
       </main>
 

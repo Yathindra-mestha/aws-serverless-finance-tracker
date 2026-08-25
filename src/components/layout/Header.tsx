@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Cloud, Plus, Minus, Calendar, Layers, LayoutDashboard, ListOrdered, Target, Menu, X, Zap, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Cloud, Plus, Minus, Calendar, Layers, LayoutDashboard, ListOrdered, Target, Menu, X, Zap, LogOut, ChevronDown, ShieldCheck, UserCircle, RefreshCw, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
+import { useAuth as useOidcAuth } from 'react-oidc-context';
 import { formatMonth } from '../../utils/formatters';
 import { TransactionType } from '../../types';
 
@@ -24,9 +25,28 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAwsModal, onOpenAddTxModal, activeTab, setActiveTab,
 }) => {
   const { user, logout } = useAuth();
+  const oidc = useOidcAuth();
   const { activeMonthYear, setActiveMonthYear } = useFinance();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState('');
+
+  // Live session countdown
+  React.useEffect(() => {
+    const expiresAt = oidc.user?.expires_at;
+    if (!expiresAt) return;
+    const update = () => {
+      const diff = expiresAt * 1000 - Date.now();
+      if (diff <= 0) { setTimeLeft('Expired'); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [oidc.user?.expires_at]);
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -169,9 +189,11 @@ export const Header: React.FC<HeaderProps> = ({
                 {profileMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#0b1120] border border-white/[0.08] shadow-2xl p-3 z-50 animate-scale-in">
+                    <div className="absolute right-0 mt-2 w-72 rounded-xl bg-[#0b1120] border border-white/[0.08] shadow-2xl p-3 z-50 animate-scale-in">
+
+                      {/* User info */}
                       <div className="flex items-center gap-3 pb-3 mb-2 border-b border-white/[0.06]">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden">
                           {user?.avatar ? (
                             <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover rounded-xl" />
                           ) : (
@@ -184,11 +206,38 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                       </div>
 
+                      {/* Cognito badge */}
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-300">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                         <span>AWS Cognito · Authenticated</span>
                       </div>
 
+                      {/* Session countdown */}
+                      {oidc.isAuthenticated && timeLeft && (
+                        <div className="flex items-center justify-between px-2.5 py-2 mb-2 rounded-lg bg-slate-800/60 border border-white/[0.05]">
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                            <Clock className="w-3 h-3" />
+                            <span>Session expires in</span>
+                          </div>
+                          <span className={`text-[11px] font-bold font-mono ${timeLeft === 'Expired' ? 'text-rose-400' : 'text-emerald-300'}`}>
+                            {timeLeft}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* View Profile button */}
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          setActiveTab('profile');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 mb-1.5 rounded-lg hover:bg-white/[0.05] text-slate-300 hover:text-white text-xs font-semibold transition-all text-left"
+                      >
+                        <UserCircle className="w-3.5 h-3.5 text-indigo-400" />
+                        View Profile & Account Details
+                      </button>
+
+                      {/* Sign out */}
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
