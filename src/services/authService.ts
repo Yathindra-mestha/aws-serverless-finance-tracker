@@ -21,10 +21,23 @@ export const AuthService = {
   
   async syncCognitoUser(claims: Record<string, any>): Promise<UserProfile> {
     const current = await StorageAdapter.getUser();
-    const displayName = claims.name || claims['cognito:username'] || claims.preferred_username || claims.email?.split('@')[0] || 'User';
-    const email = claims.email || current?.email || '';
     
-    // Construct avatar using real user initials or custom picture if available
+    // Check if string is a raw UUID
+    const isUuid = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+    
+    const email = claims.email || current?.email || '';
+    const emailPrefix = email ? email.split('@')[0] : '';
+    const formattedEmailName = emailPrefix
+      ? emailPrefix.split(/[._-]/).map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+      : '';
+
+    const rawUsername = claims['cognito:username'] || claims.preferred_username || '';
+    const cleanUsername = isUuid(rawUsername) ? '' : rawUsername;
+
+    // Pick cleanest display name
+    const displayName = claims.name || formattedEmailName || cleanUsername || 'User';
+    
+    // Construct avatar using initials or custom picture
     const avatarUrl = claims.picture || claims.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff&size=128&bold=true`;
     
     // Construct user from Cognito OIDC claims

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cloud, Plus, Minus, Calendar, Layers, LayoutDashboard, ListOrdered, Target, Menu, X, Zap } from 'lucide-react';
+import { Cloud, Plus, Minus, Calendar, Layers, LayoutDashboard, ListOrdered, Target, Menu, X, Zap, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useFinance } from '../../context/FinanceContext';
 import { formatMonth } from '../../utils/formatters';
@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, logout } = useAuth();
   const { activeMonthYear, setActiveMonthYear } = useFinance();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -141,28 +142,67 @@ export const Header: React.FC<HeaderProps> = ({
                 AWS Blueprint
               </button>
 
-              {/* User Profile / Click to Sign Out */}
-              <button
-                onClick={() => user && logout()}
-                title={`${user?.name || user?.email || 'User'} (Click to sign out)`}
-                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-[10px] bg-white/[0.035] border border-white/[0.06] hover:border-rose-500/40 hover:bg-rose-500/10 transition-all cursor-pointer flex-shrink-0 group"
-              >
-                <div className="w-7 h-7 rounded-[8px] overflow-hidden ring-1 ring-white/10 flex-shrink-0 bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-[11px] font-bold">
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user?.name || 'User'}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                    />
-                  ) : (
-                    (user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()
-                  )}
-                </div>
-                <span className="hidden sm:inline text-[12px] font-semibold text-slate-300 group-hover:text-rose-300 transition-colors max-w-[110px] truncate">
-                  {user?.name || user?.email?.split('@')[0] || 'Account'}
-                </span>
-              </button>
+              {/* User Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-[10px] bg-white/[0.035] border border-white/[0.06] hover:border-indigo-500/40 hover:bg-white/[0.06] transition-all cursor-pointer flex-shrink-0 group"
+                >
+                  <div className="w-7 h-7 rounded-[8px] overflow-hidden ring-1 ring-white/10 flex-shrink-0 bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-[11px] font-bold">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user?.name || 'User'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
+                    ) : (
+                      (user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()
+                    )}
+                  </div>
+                  <span className="hidden sm:inline text-[12px] font-semibold text-slate-200 group-hover:text-white transition-colors max-w-[120px] truncate">
+                    {user?.name || user?.email?.split('@')[0] || 'Account'}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-slate-400 group-hover:text-white transition-transform" />
+                </button>
+
+                {profileMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-64 rounded-xl bg-[#0b1120] border border-white/[0.08] shadow-2xl p-3 z-50 animate-scale-in">
+                      <div className="flex items-center gap-3 pb-3 mb-2 border-b border-white/[0.06]">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 overflow-hidden">
+                          {user?.avatar ? (
+                            <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover rounded-xl" />
+                          ) : (
+                            (user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate">{user?.name || 'Authenticated User'}</p>
+                          <p className="text-[11px] text-slate-400 truncate">{user?.email || 'Cognito User Pool'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 mb-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-300">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>AWS Cognito · Authenticated</span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          logout();
+                        }}
+                        className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-xs font-bold transition-all active:scale-[0.98]"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Mobile menu */}
               <button
