@@ -12,10 +12,14 @@ import {
   Code,
   ArrowRight,
   Sparkles,
+  XCircle,
+  Clock,
+  ShieldCheck,
 } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { useFinance } from '../../context/FinanceContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAuth as useOidcAuth } from 'react-oidc-context';
 import { awsLogger } from '../../services/awsLogger';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -33,7 +37,17 @@ export const AwsArchitectureModal: React.FC<AwsArchitectureModalProps> = ({
   const [selectedService, setSelectedService] = useState<AwsServiceKey>('dynamodb');
   const { summary, transactions, sendSnsMonthlyDigest, activeMonthYear } = useFinance();
   const { user } = useAuth();
+  const oidc = useOidcAuth();
   const [simulationResult, setSimulationResult] = useState<string | null>(null);
+
+  // Real token data from Cognito OIDC session
+  const isRealAuth = oidc.isAuthenticated;
+  const idToken = oidc.user?.id_token;
+  const accessToken = oidc.user?.access_token;
+  const tokenExpiry = oidc.user?.expires_at
+    ? new Date(oidc.user.expires_at * 1000).toLocaleTimeString()
+    : null;
+  const profile = oidc.user?.profile;
 
   const servicesData: Record<
     AwsServiceKey,
@@ -78,9 +92,9 @@ const authSession = await fetchAuthSession();
 const token = authSession.tokens.idToken.toString();
 // Sent as: { headers: { Authorization: \`Bearer \${token}\` } }`,
       liveStats: [
-        { label: 'Auth Status', value: 'Verified (JWT Active)' },
-        { label: 'Current User', value: user?.email || 'alex.cloud.dev@example.com' },
-        { label: 'Token Type', value: 'Bearer ID Token' },
+        { label: 'Auth Status', value: isRealAuth ? '✅ Verified (JWT Active)' : '⚠️ Demo Mode' },
+        { label: 'Current User', value: user?.email || (profile as any)?.email || 'Not authenticated' },
+        { label: 'Token Expires', value: tokenExpiry ? `Today at ${tokenExpiry}` : 'Bearer ID Token' },
       ],
     },
     apigateway: {
@@ -174,13 +188,51 @@ await snsClient.send(new PublishCommand({
     if (selectedService === 'sns') {
       const res = await sendSnsMonthlyDigest(user?.email || 'alex.cloud.dev@example.com');
       setSimulationResult(JSON.stringify(res, null, 2));
+    } else if (selectedService === 'cognito') {
+      // Real Cognito JWT decode and session inspection
+      if (isRealAuth && profile && idToken) {
+        // Decode the JWT payload (it's base64 encoded - public claims only)
+        const tokenParts = idToken.split('.');
+        let decodedPayload: Record<string, any> = {};
+        try {
+          decodedPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        } catch {
+          decodedPayload = { error: 'Could not decode token payload' };
+        }
+        awsLogger.log({ service: 'Cognito', action: 'JWT Token Inspection', details: `Real token decoded for ${user?.email}`, status: '200 OK', latencyMs: 4 });
+        setSimulationResult(JSON.stringify({
+          status: '200 OK',
+          authMode: 'AWS Cognito (Real Session)',
+          user: {
+            sub: profile.sub,
+            email: profile.email,
+            name: user?.name,
+          },
+          tokenType: 'Bearer ID Token (JWT)',
+          tokenExpiry: tokenExpiry ? `Today at ${tokenExpiry}` : 'Unknown',
+          jwtClaims: {
+            iss: decodedPayload.iss,
+            token_use: decodedPayload.token_use,
+            scope: decodedPayload.scope,
+            auth_time: decodedPayload.auth_time ? new Date(decodedPayload.auth_time * 1000).toISOString() : undefined,
+            exp: decodedPayload.exp ? new Date(decodedPayload.exp * 1000).toISOString() : undefined,
+          },
+          requestId: `amzn-req-${Math.random().toString(36).substring(2, 9)}`,
+          timestamp: new Date().toISOString(),
+        }, null, 2));
+      } else {
+        setSimulationResult(JSON.stringify({
+          status: '200 OK (Demo Mode)',
+          authMode: 'Local Demo — Not Connected to Cognito',
+          message: 'Sign in with AWS Cognito to see real JWT token data.',
+          timestamp: new Date().toISOString(),
+        }, null, 2));
+      }
     } else {
       awsLogger.log({
         service:
           selectedService === 'dynamodb'
             ? 'DynamoDB'
-            : selectedService === 'cognito'
-            ? 'Cognito'
             : selectedService === 'apigateway'
             ? 'APIGateway'
             : 'Lambda',
