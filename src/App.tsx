@@ -13,7 +13,7 @@ import { AwsArchitectureModal } from './components/aws/AwsArchitectureModal';
 import { AwsLiveConsoleDrawer } from './components/aws/AwsLiveConsoleDrawer';
 import { AuthModal } from './components/auth/AuthModal';
 import { Transaction, TransactionType } from './types';
-import { Layers, RotateCcw, Shield } from 'lucide-react';
+import { Layers, RotateCcw, Shield, Cloud } from 'lucide-react';
 
 // ── Toast ────────────────────────────────────────────────────
 const Toast: React.FC = () => {
@@ -22,11 +22,11 @@ const Toast: React.FC = () => {
 
 // ── Main App Shell ──────────────────────────────────────────
 const MainLayout: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const { clearToZero, revertToSampleData } = useFinance();
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(!isAuthenticated);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddTxModalOpen, setIsAddTxModalOpen] = useState(false);
   const [addTxType, setAddTxType] = useState<TransactionType>('expense');
   const [isEditTxModalOpen, setIsEditTxModalOpen] = useState(false);
@@ -42,6 +42,25 @@ const MainLayout: React.FC = () => {
   };
   const handleEditTx = (tx: Transaction) => { setEditingTx(tx); setIsEditTxModalOpen(true); };
   const handleDeleteTx = (tx: Transaction) => { setDeletingTx(tx); setIsDeleteModalOpen(true); };
+
+  // Automatically keep modal closed when user is authenticated, open if not authenticated and not loading
+  React.useEffect(() => {
+    if (!isLoading) {
+      setIsAuthModalOpen(!isAuthenticated);
+    }
+  }, [isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#080C14] flex flex-col items-center justify-center text-white px-4">
+        <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-indigo animate-pulse mb-4">
+          <Cloud className="w-7 h-7 text-white" strokeWidth={2.5} />
+        </div>
+        <p className="text-base font-bold text-slate-200">Authenticating with AWS Cognito...</p>
+        <p className="text-xs text-slate-500 mt-1.5 font-mono">Securing session · ap-south-1</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-indigo-500/30 selection:text-white" style={{ paddingBottom: '60px' }}>
