@@ -147,7 +147,7 @@ import { AuthProvider as OidcProvider } from 'react-oidc-context';
 const oidcConfig = {
   authority: (import.meta as any).env.VITE_COGNITO_AUTHORITY,
   client_id: (import.meta as any).env.VITE_COGNITO_CLIENT_ID,
-  redirect_uri: (import.meta as any).env.VITE_APP_URL || window.location.origin,
+  redirect_uri: (import.meta as any).env.VITE_APP_URL || (window.location.origin + (window.location.origin.includes('localhost') ? '' : '/')),
   response_type: "code",
   scope: "openid email phone",
   onSigninCallback: () => {
