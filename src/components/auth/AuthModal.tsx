@@ -68,12 +68,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           {/* Form */}
           <div className="px-6 pb-4 space-y-3.5">
             <button
-              onClick={() => login()} disabled={isLoading}
+              onClick={() => {
+                login().catch(e => console.error(e));
+              }}
+              disabled={isLoading}
               className="w-full py-2.5 rounded-xl text-[14px] font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-indigo transition-all active:scale-[0.98] disabled:opacity-60"
               style={{ letterSpacing: '-0.01em' }}
             >
               {isLoading ? 'Authenticating…' : 'Sign In with AWS Cognito'}
             </button>
+            <div className="text-[10px] text-slate-500 break-all bg-slate-900/50 p-2 rounded">
+              Debug redirect_uri: {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000/' : 'https://fintrack-yathindra.vercel.app/'}
+            </div>
           </div>
 
           {/* Divider */}
