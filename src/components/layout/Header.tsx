@@ -31,22 +31,24 @@ export const Header: React.FC<HeaderProps> = ({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
 
-  // Live session countdown
+  // Live master 30-day session countdown
   React.useEffect(() => {
-    const expiresAt = oidc.user?.expires_at;
-    if (!expiresAt) return;
+    if (!oidc.user) return;
+    const authTimeSec = (oidc.user.profile as any)?.auth_time || (oidc.user.expires_at ? oidc.user.expires_at - 3600 : Math.floor(Date.now() / 1000));
+    const masterExpiresAtMs = (authTimeSec + 30 * 24 * 3600) * 1000;
+
     const update = () => {
-      const diff = expiresAt * 1000 - Date.now();
+      const diff = masterExpiresAtMs - Date.now();
       if (diff <= 0) { setTimeLeft('Expired'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+      const d = Math.floor(diff / (24 * 3600 * 1000));
+      const h = Math.floor((diff % (24 * 3600 * 1000)) / (3600 * 1000));
+      const m = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
+      setTimeLeft(d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`);
     };
     update();
-    const id = setInterval(update, 1000);
+    const id = setInterval(update, 10000);
     return () => clearInterval(id);
-  }, [oidc.user?.expires_at]);
+  }, [oidc.user]);
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -212,12 +214,12 @@ export const Header: React.FC<HeaderProps> = ({
                         <span>AWS Cognito · Authenticated</span>
                       </div>
 
-                      {/* Session countdown */}
+                      {/* Master 30-Day Session countdown */}
                       {oidc.isAuthenticated && timeLeft && (
                         <div className="flex items-center justify-between px-2.5 py-2 mb-2 rounded-lg bg-slate-800/60 border border-white/[0.05]">
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                            <Clock className="w-3 h-3" />
-                            <span>Session expires in</span>
+                            <Clock className="w-3 h-3 text-emerald-400" />
+                            <span>Master Logout in</span>
                           </div>
                           <span className={`text-[11px] font-bold font-mono ${timeLeft === 'Expired' ? 'text-rose-400' : 'text-emerald-300'}`}>
                             {timeLeft}

@@ -50,7 +50,8 @@ const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.
 export const ProfileView: React.FC = () => {
   const { user, logout } = useAuth();
   const oidc = useOidcAuth();
-  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [masterTimeLeft, setMasterTimeLeft] = useState<string>('');
+  const [tokenTimeLeft, setTokenTimeLeft] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
   const [showRawClaims, setShowRawClaims] = useState(false);
   const [decodedClaims, setDecodedClaims] = useState<Record<string, any> | null>(null);
@@ -71,21 +72,49 @@ export const ProfileView: React.FC = () => {
     }
   }, [idToken]);
 
-  // Live countdown timer
+  // Master 30-Day Session Expiration (Actual Logout countdown)
+  const authTimeSec = decodedClaims?.auth_time || (expiresAt ? expiresAt - 3600 : Math.floor(Date.now() / 1000));
+  const masterExpiresAtMs = (authTimeSec + 30 * 24 * 3600) * 1000;
+  const masterExpiryDate = new Date(masterExpiresAtMs).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  // Live countdown timers (Master 30-Day session + 60-Min JWT Token)
   useEffect(() => {
-    if (!expiresAt) return;
     const update = () => {
-      const diff = expiresAt * 1000 - Date.now();
-      if (diff <= 0) { setTimeLeft('Expired'); return; }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimeLeft(h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`);
+      // 1. Master 30-Day Logout Timer
+      const masterDiff = masterExpiresAtMs - Date.now();
+      if (masterDiff <= 0) {
+        setMasterTimeLeft('Expired');
+      } else {
+        const d = Math.floor(masterDiff / (24 * 3600 * 1000));
+        const h = Math.floor((masterDiff % (24 * 3600 * 1000)) / (3600 * 1000));
+        const m = Math.floor((masterDiff % (3600 * 1000)) / (60 * 1000));
+        const s = Math.floor((masterDiff % (60 * 1000)) / 1000);
+        setMasterTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+      }
+
+      // 2. Short-term 60-minute JWT Token Timer
+      if (expiresAt) {
+        const tokenDiff = expiresAt * 1000 - Date.now();
+        if (tokenDiff <= 0) {
+          setTokenTimeLeft('Renewing...');
+        } else {
+          const m = Math.floor((tokenDiff % 3600000) / 60000);
+          const s = Math.floor((tokenDiff % 60000) / 1000);
+          setTokenTimeLeft(`${m}m ${s}s`);
+        }
+      }
     };
+
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [expiresAt]);
+  }, [masterExpiresAtMs, expiresAt]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -95,9 +124,6 @@ export const ProfileView: React.FC = () => {
 
   const authTime = decodedClaims?.auth_time
     ? new Date(decodedClaims.auth_time * 1000).toLocaleString()
-    : null;
-  const tokenExpiry = expiresAt
-    ? new Date(expiresAt * 1000).toLocaleString()
     : null;
   const emailVerified = (profile as any)?.email_verified;
 
@@ -139,6 +165,41 @@ export const ProfileView: React.FC = () => {
         </div>
       </div>
 
+      {/* ── Master Session & Logout Expiration ───────────────── */}
+      <Section title="Active Session & Master Expiration" icon={<Clock className="w-4 h-4" />} accentClass="from-emerald-900/40 to-transparent">
+        <div className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.05]">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Master Logout in</span>
+              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                30-Day Policy
+              </span>
+            </div>
+            <p className={`text-3xl font-black font-mono tracking-tight ${masterTimeLeft === 'Expired' ? 'text-rose-400' : 'text-emerald-300'}`}>
+              {masterTimeLeft || (isRealAuth ? 'Calculating…' : '—')}
+            </p>
+            {isRealAuth && (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Full re-login required on <span className="font-semibold text-slate-200">{masterExpiryDate}</span>
+              </p>
+            )}
+          </div>
+          {isRealAuth && (
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 hover:border-emerald-400/50 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing…' : 'Refresh Token Now'}
+            </button>
+          )}
+        </div>
+        <InfoRow label="Silent Auto-Renew" value={`Active (Next in ${tokenTimeLeft || '60m'})`} mono />
+        <InfoRow label="Refresh Policy" value="30 Days (AWS Cognito Default)" />
+        <InfoRow label="Auth Type" value="Authorization Code + PKCE (SPA)" />
+      </Section>
+
       {/* ── Account Details ─────────────────────────────────── */}
       <Section title="Account Details" icon={<User className="w-4 h-4" />} accentClass="from-indigo-900/50 to-transparent">
         <InfoRow label="Display Name" value={user?.name || '—'} />
@@ -158,34 +219,6 @@ export const ProfileView: React.FC = () => {
           <InfoRow label="Token Use" value={decodedClaims?.token_use || 'id'} mono />
         </Section>
       )}
-
-      {/* ── Session Countdown ────────────────────────────────── */}
-      <Section title="Session & Token" icon={<Clock className="w-4 h-4" />} accentClass="from-emerald-900/40 to-transparent">
-        <div className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/[0.05]">
-          <div>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest mb-1">Session Expires In</p>
-            <p className={`text-3xl font-black font-mono tracking-tight ${timeLeft === 'Expired' ? 'text-rose-400' : 'text-emerald-300'}`}>
-              {timeLeft || (isRealAuth ? 'Calculating…' : '—')}
-            </p>
-            {tokenExpiry && (
-              <p className="text-[11px] text-slate-500 mt-0.5">Expires at {tokenExpiry}</p>
-            )}
-          </div>
-          {isRealAuth && (
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 hover:border-emerald-400/50 text-emerald-300 text-xs font-bold transition-all disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? 'Refreshing…' : 'Refresh Session'}
-            </button>
-          )}
-        </div>
-        <InfoRow label="Token Type" value="Bearer ID Token (JWT)" mono />
-        <InfoRow label="OAuth Scopes" value="email openid phone" mono />
-        <InfoRow label="Grant Type" value="Authorization Code + PKCE" />
-      </Section>
 
       {/* ── Raw JWT Claims ───────────────────────────────────── */}
       {isRealAuth && decodedClaims && (
