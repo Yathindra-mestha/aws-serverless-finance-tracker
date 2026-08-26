@@ -333,11 +333,18 @@ export const ApiService = {
 
   async checkBudgetAlert(category: string): Promise<{ percentageUsed: number; alertTriggered: boolean; message: string | null }> {
     try {
+      const requestBody = JSON.stringify({ category });
+      console.log(`[DIAGNOSTIC] POST /budget/check request body:`, requestBody);
+
       const res = await apiFetch('/budget/check', {
         method: 'POST',
-        body: JSON.stringify({ category }),
+        body: requestBody,
       });
       
+      console.log(`[DIAGNOSTIC] AWS response raw:`, res);
+      console.log(`[DIAGNOSTIC] AWS response percentageUsed:`, res.percentageUsed);
+      console.log(`[DIAGNOSTIC] AWS response alertTriggered:`, res.alertTriggered);
+
       awsLogger.log({
         service: 'APIGateway',
         action: 'POST /budget/check',

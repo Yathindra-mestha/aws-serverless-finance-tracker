@@ -293,6 +293,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (tx.type === 'expense') {
         // Run in background without blocking UI
         ApiService.checkBudgetAlert(tx.category).then((alertStatus) => {
+          console.log(`[DIAGNOSTIC] Final percentage shown in the toast:`, alertStatus.percentageUsed);
           if (alertStatus.alertTriggered) {
             showToast(
               'warning',
