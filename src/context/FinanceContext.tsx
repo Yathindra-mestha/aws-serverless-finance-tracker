@@ -296,8 +296,8 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           if (alertStatus.alertTriggered) {
             showToast(
               'warning',
-              'Budget Alert ⚠️',
-              alertStatus.message || `You've used ${alertStatus.percentageUsed}% of your ${tx.category} budget!`,
+              'Budget Alert 🚨',
+              `Budget alert: ${alertStatus.percentageUsed}% of monthly limit used for category ${tx.category}.`,
               8000
             );
           }
