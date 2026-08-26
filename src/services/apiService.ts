@@ -289,10 +289,14 @@ export const ApiService = {
         }
       }
 
-      // Merge AWS category limits with the local budget structure
+      // Always derive totalBudget from AWS category limits so stale localStorage
+      // values (e.g. old ₹1,00,000) never leak through when all budgets are deleted.
+      const totalBudget = Object.values(categoryBudgets).reduce((sum, v) => sum + v, 0);
+
       return {
         ...localBudget,
         categoryBudgets,
+        totalBudget,
       };
     } catch (error: any) {
       console.error(`[API] GET /budget failed:`, error.message);
