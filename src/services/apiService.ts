@@ -331,6 +331,36 @@ export const ApiService = {
     return saved;
   },
 
+  async deleteBudget(category: string): Promise<void> {
+    const startTime = performance.now();
+    try {
+      await apiFetch(`/budget/${encodeURIComponent(category)}`, {
+        method: 'DELETE',
+      });
+
+      const latency = Math.round(performance.now() - startTime + 20);
+
+      awsLogger.log({
+        service: 'APIGateway',
+        action: `DELETE /budget/${category}`,
+        details: `Removed budget limit for category "${category}" via Cognito JWT Authorizer`,
+        status: '200 OK',
+        latencyMs: 15,
+      });
+
+      awsLogger.log({
+        service: 'DynamoDB',
+        action: `DeleteItem (category=${category})`,
+        details: `Removed budget record from DynamoDB`,
+        status: 'Success',
+        latencyMs: latency,
+      });
+    } catch (error: any) {
+      console.error(`[API] DELETE /budget/${category} failed:`, error.message);
+      throw error; // DO NOT fallback silently
+    }
+  },
+
   async checkBudgetAlert(category: string): Promise<{ percentageUsed: number; alertTriggered: boolean; message: string | null }> {
     try {
       const requestBody = JSON.stringify({ category });

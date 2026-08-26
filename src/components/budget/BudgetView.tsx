@@ -9,7 +9,7 @@ import { CategoryIcon } from '../common/CategoryIcon';
 /** Clean, user-driven Budget tab where items list comes first */
 export const BudgetView: React.FC = () => {
   const { user } = useAuth();
-  const { budget, updateFullBudget, summary } = useFinance();
+  const { budget, updateFullBudget, summary, deleteCategoryBudget } = useFinance();
   const { showToast } = useToast();
   const sym = user?.currencySymbol ?? '₹';
   const code = user?.currency ?? 'INR';
@@ -55,12 +55,18 @@ export const BudgetView: React.FC = () => {
     setAmountInput('');
   };
 
-  const handleRemove = (name: string) => {
-    setCategoryBudgets((prev) => {
-      const copy = { ...prev };
-      delete copy[name];
-      return copy;
-    });
+  const handleRemove = async (name: string) => {
+    try {
+      await deleteCategoryBudget(name);
+      // On AWS success, also remove from the local form state
+      setCategoryBudgets((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    } catch {
+      // Error toast already shown by deleteCategoryBudget in context
+    }
   };
 
   const validItems = Object.entries(categoryBudgets).filter(

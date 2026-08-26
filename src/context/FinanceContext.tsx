@@ -43,6 +43,7 @@ interface FinanceContextType {
   updateBudgetAmount: (totalBudget: number) => Promise<void>;
   updateCategoryBudgets: (categoryBudgets: Record<string, number>) => Promise<void>;
   updateFullBudget: (totalBudget: number, categoryBudgets: Record<string, number>) => Promise<void>;
+  deleteCategoryBudget: (category: string) => Promise<void>;
   updateNotificationPrefs: (prefs: NotificationPreferences) => Promise<void>;
   updateAwsConfig: (config: AWSServerlessConfig) => void;
   sendSnsMonthlyDigest: (email: string) => Promise<{ success: boolean; message: string }>;
@@ -369,6 +370,26 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  const deleteCategoryBudget = async (category: string): Promise<void> => {
+    if (!budget) return;
+    try {
+      await ApiService.deleteBudget(category);
+      // Update local state: remove the deleted category from budget
+      const updatedCategoryBudgets = { ...budget.categoryBudgets };
+      delete updatedCategoryBudgets[category];
+      const updatedTotalBudget = Object.values(updatedCategoryBudgets).reduce((sum, v) => sum + (v as number), 0);
+      setBudget({
+        ...budget,
+        totalBudget: updatedTotalBudget,
+        categoryBudgets: updatedCategoryBudgets,
+      });
+      showToast('info', 'Budget Removed', `Budget limit for "${category}" deleted.`);
+    } catch (err: any) {
+      showToast('error', 'Failed to delete budget', err.message);
+      throw err;
+    }
+  };
+
   const updateNotificationPrefs = async (prefs: NotificationPreferences): Promise<void> => {
     try {
       const updated = await ApiService.updateNotificationPreferences(prefs);
@@ -433,6 +454,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateBudgetAmount,
         updateCategoryBudgets,
         updateFullBudget,
+        deleteCategoryBudget,
         updateNotificationPrefs,
         updateAwsConfig,
         sendSnsMonthlyDigest,

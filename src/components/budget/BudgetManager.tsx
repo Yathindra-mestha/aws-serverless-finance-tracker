@@ -12,7 +12,7 @@ interface BudgetManagerProps {
 
 export const BudgetManager: React.FC<BudgetManagerProps> = ({ onClose }) => {
   const { user } = useAuth();
-  const { budget, updateFullBudget } = useFinance();
+  const { budget, updateFullBudget, deleteCategoryBudget } = useFinance();
   const { showToast } = useToast();
   const sym = user?.currencySymbol ?? '₹';
   const code = user?.currency ?? 'INR';
@@ -56,12 +56,18 @@ export const BudgetManager: React.FC<BudgetManagerProps> = ({ onClose }) => {
     setAmountInput('');
   };
 
-  const handleRemove = (name: string) => {
-    setCategoryBudgets((prev) => {
-      const copy = { ...prev };
-      delete copy[name];
-      return copy;
-    });
+  const handleRemove = async (name: string) => {
+    try {
+      await deleteCategoryBudget(name);
+      // On AWS success, remove from local form state
+      setCategoryBudgets((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    } catch {
+      // Error toast already shown by deleteCategoryBudget in context
+    }
   };
 
   const validItems = Object.entries(categoryBudgets).filter(
