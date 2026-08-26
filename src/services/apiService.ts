@@ -175,18 +175,59 @@ export const ApiService = {
   },
 
   async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction> {
-    const updated = await StorageAdapter.updateTransaction(id, updates);
+    const startTime = performance.now();
+    try {
+      // Send only the editable transaction fields in the JSON body
+      const payload = {
+        amount: updates.amount,
+        type: updates.type,
+        category: updates.category,
+        date: updates.date,
+        description: updates.description,
+        notes: updates.notes,
+        paymentMethod: updates.paymentMethod,
+        tags: updates.tags,
+      };
 
-    awsLogger.log({
-      service: 'DynamoDB',
-      action: 'UpdateItem (SK = TX#' + id.slice(-6) + ')',
-      details: `Modified item attributes in DynamoDB`,
-      status: 'Success',
-      latencyMs: 28,
-      payload: updates,
-    });
+      // Clean up undefined fields from payload to avoid sending unnecessary data
+      const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
 
-    return updated;
+      const response = await apiFetch(`/transactions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(cleanPayload),
+      });
+
+      const latency = Math.round(performance.now() - startTime + 30);
+      const updatedTx = response.transaction || response;
+      
+      // Map back to frontend shape
+      const mappedTx: Transaction = {
+        ...updatedTx,
+        id: updatedTx.transactionId || id,
+      };
+
+      awsLogger.log({
+        service: 'APIGateway',
+        action: `PUT /transactions/${id}`,
+        details: `HTTP 200 via Cognito JWT Authorizer for transaction update`,
+        status: '200 OK',
+        latencyMs: 15,
+      });
+
+      awsLogger.log({
+        service: 'DynamoDB',
+        action: 'UpdateItem (SK = TX#' + id.slice(-6) + ')',
+        details: `Modified item attributes in DynamoDB`,
+        status: 'Success',
+        latencyMs: latency,
+        payload: cleanPayload,
+      });
+
+      return mappedTx;
+    } catch (error: any) {
+      console.error(`[API] PUT /transactions/${id} failed:`, error.message);
+      throw error; // DO NOT fallback to StorageAdapter
+    }
   },
 
   async deleteTransaction(id: string): Promise<boolean> {
