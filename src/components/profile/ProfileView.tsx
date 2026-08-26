@@ -5,6 +5,7 @@ import {
   User, Mail, Key, Shield, Clock, RefreshCw, Copy, CheckCheck,
   Activity, Lock, ChevronDown, ChevronUp,
 } from 'lucide-react';
+import { SnsNotificationConfig } from '../aws/SnsNotificationConfig';
 
 // ── Reusable Row ─────────────────────────────────────────────
 const InfoRow: React.FC<{ label: string; value: string; mono?: boolean; copyable?: boolean }> = ({
@@ -241,6 +242,9 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* ── Notification Preferences ──────────────────────────── */}
+      <SnsNotificationConfig />
 
       {/* ── Danger Zone ─────────────────────────────────────── */}
       <div className="bg-[#0b1120] border border-rose-500/15 rounded-2xl p-5">
