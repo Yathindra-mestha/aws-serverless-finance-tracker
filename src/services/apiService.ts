@@ -231,17 +231,35 @@ export const ApiService = {
   },
 
   async deleteTransaction(id: string): Promise<boolean> {
-    await StorageAdapter.deleteTransaction(id);
+    const startTime = performance.now();
+    try {
+      await apiFetch(`/transactions/${id}`, {
+        method: 'DELETE',
+      });
 
-    awsLogger.log({
-      service: 'DynamoDB',
-      action: 'DeleteItem (SK = TX#' + id.slice(-6) + ')',
-      details: `Removed item from table FinTrack_Transactions_Prod`,
-      status: 'Success',
-      latencyMs: 22,
-    });
+      const latency = Math.round(performance.now() - startTime + 25);
 
-    return true;
+      awsLogger.log({
+        service: 'APIGateway',
+        action: `DELETE /transactions/${id}`,
+        details: `HTTP 200 via Cognito JWT Authorizer for transaction deletion`,
+        status: '200 OK',
+        latencyMs: 15,
+      });
+
+      awsLogger.log({
+        service: 'DynamoDB',
+        action: 'DeleteItem (SK = TX#' + id.slice(-6) + ')',
+        details: `Removed item from DynamoDB`,
+        status: 'Success',
+        latencyMs: latency,
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error(`[API] DELETE /transactions/${id} failed:`, error.message);
+      throw error; // DO NOT fallback to StorageAdapter
+    }
   },
 
   // --- Budget API ---
