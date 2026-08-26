@@ -264,8 +264,40 @@ export const ApiService = {
 
   // --- Budget API ---
   async fetchBudget(monthYear: string): Promise<Budget> {
-    const budget = await StorageAdapter.getBudget(monthYear);
-    return budget;
+    const startTime = performance.now();
+    
+    // Load local storage to get UI-only state (like totalBudget) because 
+    // the AWS backend currently only stores per-category limits natively.
+    const localBudget = await StorageAdapter.getBudget(monthYear);
+
+    try {
+      const response = await apiFetch('/budget');
+      const latency = Math.round(performance.now() - startTime + 20);
+
+      awsLogger.log({
+        service: 'APIGateway',
+        action: 'GET /budget',
+        details: `Retrieved budget limits from DynamoDB via Cognito JWT Authorizer`,
+        status: '200 OK',
+        latencyMs: latency,
+      });
+
+      const categoryBudgets: Record<string, number> = {};
+      if (response.budgets && Array.isArray(response.budgets)) {
+        for (const b of response.budgets) {
+          categoryBudgets[b.category] = b.monthlyLimit;
+        }
+      }
+
+      // Merge AWS category limits with the local budget structure
+      return {
+        ...localBudget,
+        categoryBudgets,
+      };
+    } catch (error: any) {
+      console.error(`[API] GET /budget failed:`, error.message);
+      throw error; // DO NOT fallback silently. Force the UI to show the AWS failure.
+    }
   },
 
   async updateBudget(budget: Budget): Promise<Budget> {
