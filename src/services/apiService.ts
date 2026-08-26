@@ -404,16 +404,26 @@ export const ApiService = {
   },
 
   async updateNotificationPreferences(prefs: NotificationPreferences): Promise<NotificationPreferences> {
+    try {
+      await apiFetch('/notifications/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ enabled: prefs.monthlyEmailDigest }),
+      });
+
+      awsLogger.log({
+        service: 'APIGateway',
+        action: 'POST /notifications/subscribe',
+        details: `Saved notification subscription (enabled: ${prefs.monthlyEmailDigest}) via Cognito JWT Authorizer`,
+        status: '200 OK',
+        latencyMs: 35,
+      });
+    } catch (error: any) {
+      console.error('[API] Failed to sync notification preferences to AWS:', error.message);
+      throw error; // Do not fallback silently
+    }
+
+    // Persist UI state locally
     const updated = await StorageAdapter.saveNotificationPreferences(prefs);
-
-    awsLogger.log({
-      service: 'SNS',
-      action: 'SetSubscriptionAttributes',
-      details: `Updated Amazon SNS Topic subscription for ${prefs.email}`,
-      status: 'Success',
-      latencyMs: 40,
-    });
-
     return updated;
   },
 
