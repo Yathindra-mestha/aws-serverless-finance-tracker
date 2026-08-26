@@ -24,7 +24,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onEditTransaction, onDeleteTransaction,
 }) => {
   const { user } = useAuth();
-  const { summary, transactions, activeMonthYear } = useFinance();
+  const { summary, transactions, activeMonthYear, budget } = useFinance();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const sym = user?.currencySymbol ?? '₹';
   const code = user?.currency ?? 'INR';
@@ -44,6 +44,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     monthlyBudget === 0 ? 'unset' :
     budgetUsedPercentage >= 100 ? 'danger' :
     budgetUsedPercentage >= 80  ? 'warning' : 'safe';
+
+  // Per-category budget rows
+  const rawCatBudgets = budget?.categoryBudgets ?? {};
+  const categoryRows = Object.entries(rawCatBudgets)
+    .filter(([, limit]) => typeof limit === 'number' && (limit as number) > 0)
+    .map(([cat, limit]) => {
+      const numLimit = limit as number;
+      const spent = categoryBreakdown.find(
+        (c) => c.category.toLowerCase() === cat.toLowerCase()
+      )?.amount ?? 0;
+      const pct = numLimit > 0 ? Math.min(Math.round((spent / numLimit) * 100), 100) : 0;
+      return { cat, limit: numLimit, spent, pct, remaining: numLimit - spent };
+    })
+    .sort((a, b) => b.pct - a.pct);
+
+  const barGradient = (pct: number) => {
+    if (pct >= 100) return 'from-rose-500 to-red-600';
+    if (pct >= 80) return 'from-amber-500 to-orange-400';
+    return 'from-emerald-500 to-teal-400';
+  };
 
   const celebrate = () => {
     confetti({
@@ -181,16 +201,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* ── Budget Status ──────────────────────────────────────── */}
       <div className="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
               <Activity className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
-              <h3
-                className="text-[14px] font-bold text-white"
-                style={{ letterSpacing: '-0.02em' }}
-              >
+              <h3 className="text-[14px] font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
                 Monthly Budget Status
               </h3>
               <p className="text-[11px] text-slate-500 font-mono mt-0.5">
@@ -200,17 +218,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span
-              className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
-                budgetStatus === 'unset'   ? 'bg-slate-800 text-slate-400 border-slate-700' :
-                budgetStatus === 'danger'  ? 'bg-rose-500/12 text-rose-400 border-rose-500/25' :
-                budgetStatus === 'warning' ? 'bg-amber-500/12 text-amber-400 border-amber-500/25' :
-                                            'bg-emerald-500/12 text-emerald-400 border-emerald-500/25'
-              }`}
-            >
+            <span className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
+              budgetStatus === 'unset'   ? 'bg-slate-800 text-slate-400 border-slate-700' :
+              budgetStatus === 'danger'  ? 'bg-rose-500/10 text-rose-400 border-rose-500/25' :
+              budgetStatus === 'warning' ? 'bg-amber-500/10 text-amber-400 border-amber-500/25' :
+                                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+            }`}>
               {budgetStatus === 'unset'   ? '⚪ Budget Not Set' :
-               budgetStatus === 'danger'  ? '🔴 Over Budget'      :
-               budgetStatus === 'warning' ? '🟡 Approaching Limit' : '🟢 On Track'} {monthlyBudget > 0 ? `· ${budgetUsedPercentage}%` : ''}
+               budgetStatus === 'danger'  ? '🔴 Over Budget' :
+               budgetStatus === 'warning' ? '🟡 Approaching Limit' : '🟢 On Track'}
+              {monthlyBudget > 0 ? ` · ${budgetUsedPercentage}%` : ''}
             </span>
             <button
               onClick={onOpenBudgetModal}
@@ -221,48 +238,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Progress bar row */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-          <div className="flex justify-between items-center sm:hidden w-full mb-1">
-            <span className="text-[12px] text-slate-500 font-medium shrink-0">
-              Spent: <span className="font-mono font-bold text-white">{formatCurrency(totalExpenses, code, sym)}</span>
-            </span>
-            <span className="text-[12px] text-slate-500 font-medium shrink-0">
-              Budget: <span className="font-mono font-bold text-indigo-300">{formatCurrency(monthlyBudget, code, sym)}</span>
-            </span>
+        {/* Per-category rows — one row per budget item */}
+        {categoryRows.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-slate-500 text-[12px]">No category budgets set. Click <span className="text-indigo-400 font-semibold cursor-pointer" onClick={onOpenBudgetModal}>Adjust</span> to add limits.</p>
           </div>
+        ) : (
+          <div className="space-y-4">
+            {categoryRows.map(({ cat, limit, spent, pct, remaining }) => (
+              <div key={cat} className="space-y-1.5">
+                {/* Label + amounts */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-slate-200">{cat}</span>
+                  <span className="text-[12px] font-mono text-slate-400">
+                    <span className={pct >= 100 ? 'text-rose-400 font-bold' : pct >= 80 ? 'text-amber-400 font-bold' : 'text-white font-bold'}>
+                      {formatCurrency(spent, code, sym)}
+                    </span>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-indigo-300">{formatCurrency(limit, code, sym)}</span>
+                  </span>
+                </div>
 
-          <span className="hidden sm:inline text-[12px] text-slate-500 font-medium shrink-0">
-            Spent: <span className="font-mono font-bold text-white">{formatCurrency(totalExpenses, code, sym)}</span>
-          </span>
-          
-          <div className="w-full sm:flex-1 h-2.5 bg-slate-800/70 rounded-full overflow-hidden border border-white/[0.04]">
-            <div
-              className={`h-full rounded-full progress-fill transition-all duration-700 ease-out ${
-                budgetStatus === 'danger'  ? 'bg-gradient-to-r from-rose-600 to-red-500' :
-                budgetStatus === 'warning' ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
-                                            'bg-gradient-to-r from-emerald-500 to-teal-400'
-              }`}
-              style={{ width: `${clamp}%` }}
-            />
+                {/* Progress bar */}
+                <div className="w-full h-2.5 bg-slate-800/70 rounded-full overflow-hidden border border-white/[0.04]">
+                  <div
+                    className={`h-full rounded-full progress-fill transition-all duration-700 ease-out bg-gradient-to-r ${barGradient(pct)}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+
+                {/* % + remaining */}
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>{pct}% used</span>
+                  <span className={remaining >= 0 ? 'text-emerald-500' : 'text-rose-500'}>
+                    {remaining >= 0
+                      ? `${formatCurrency(remaining, code, sym)} left`
+                      : `${formatCurrency(Math.abs(remaining), code, sym)} over`}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {/* Total footer */}
+            <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-500">
+              <span>Total spent: <span className="text-white font-mono font-bold">{formatCurrency(totalExpenses, code, sym)}</span></span>
+              <span>
+                {remainingBudget >= 0 ? 'Remaining: ' : 'Over by: '}
+                <span className={`font-mono font-bold ${remainingBudget >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {formatCurrency(Math.abs(remainingBudget), code, sym)}
+                </span>
+              </span>
+            </div>
           </div>
-
-          <span className="hidden sm:inline text-[12px] text-slate-500 font-medium shrink-0">
-            Budget: <span className="font-mono font-bold text-indigo-300">{formatCurrency(monthlyBudget, code, sym)}</span>
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] text-slate-500 font-medium">
-            {remainingBudget >= 0 ? 'Remaining this month:' : 'Over budget by:'}
-          </span>
-          <span
-            className={`amount font-bold text-[15px] ${remainingBudget >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            {formatCurrency(Math.abs(remainingBudget), code, sym)}
-          </span>
-        </div>
+        )}
       </div>
 
       {/* ── Bottom Grid ────────────────────────────────────────── */}
