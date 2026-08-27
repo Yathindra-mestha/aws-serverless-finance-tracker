@@ -1,0 +1,1 @@
+{"statusCode":401,"headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type,Authorization","Access-Control-Allow-Methods":"OPTIONS,GET"},"body":"{\"error\":\"Unauthorized\",\"message\":\"Missing authenticated Cognito user.\"}"}

@@ -3,18 +3,26 @@ import {
   DynamoDBDocumentClient,
   ScanCommand,
   PutCommand,
-  UpdateCommand
+  UpdateCommand,
+  GetCommand
 } from "@aws-sdk/lib-dynamodb";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import crypto from "crypto";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+const sesClient = new SESClient({});
 
 const RECURRING_TABLE =
   process.env.RECURRING_TRANSACTIONS_TABLE || "RecurringTransactions";
 
 const TRANSACTIONS_TABLE =
   process.env.TRANSACTIONS_TABLE || "Transactions";
+
+const NOTIFICATIONS_TABLE =
+  process.env.NOTIFICATION_TABLE || "NotificationSubscriptions";
+
+const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL;
 
 export const handler = async (event) => {
   console.log("Received event:", JSON.stringify(event, null, 2));
@@ -132,6 +140,44 @@ export const handler = async (event) => {
           transactionId,
           userId: rule.userId
         });
+        
+        // --- NOTIFICATION LOGIC ---
+        try {
+          const subResult = await docClient.send(
+            new GetCommand({
+              TableName: NOTIFICATIONS_TABLE,
+              Key: { userId: rule.userId }
+            })
+          );
+          const sub = subResult.Item;
+          
+          if (sub && sub.enabled === true && sub.email && SES_FROM_EMAIL) {
+            const amountStr = transaction.amount.toLocaleString('en-IN');
+            const emailBody = `Recurring Transaction Added\n\n${transaction.description || transaction.category}\n₹${amountStr}\nCategory: ${transaction.category}\nDate: ${todayDate}\n\nFinTrack automatically added this transaction from your recurring rule.`;
+            
+            await sesClient.send(
+              new SendEmailCommand({
+                Source: SES_FROM_EMAIL,
+                Destination: {
+                  ToAddresses: [sub.email]
+                },
+                Message: {
+                  Subject: { Data: "FinTrack Recurring Transaction Added" },
+                  Body: {
+                    Text: { Data: emailBody }
+                  }
+                }
+              })
+            );
+            console.log(`Notification sent to ${sub.email} for rule ${rule.recurringId}`);
+          } else {
+            console.log(`Notification skipped for rule ${rule.recurringId}: User disabled, no email, or SES_FROM_EMAIL missing.`);
+          }
+        } catch (notifErr) {
+          console.error(`Failed to send notification for rule ${rule.recurringId}:`, notifErr);
+          // We DO NOT throw here to avoid failing the transaction that was already created.
+        }
+        
       } catch (error) {
         console.error(
           `Failed processing recurring rule ${rule.recurringId}:`,

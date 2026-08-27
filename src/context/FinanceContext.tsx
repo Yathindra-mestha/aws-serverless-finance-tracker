@@ -319,7 +319,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   ): Promise<Transaction> => {
     try {
       const updated = await ApiService.updateTransaction(id, updates);
-      setTransactions((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      await loadAllData();
       showToast('success', 'Transaction Updated', 'Changes saved successfully.');
       return updated;
     } catch (err: any) {
@@ -331,7 +331,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const deleteTransaction = async (id: string): Promise<boolean> => {
     try {
       await ApiService.deleteTransaction(id);
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      await loadAllData();
       showToast('info', 'Transaction Deleted', 'The record was removed.');
       return true;
     } catch (err: any) {
