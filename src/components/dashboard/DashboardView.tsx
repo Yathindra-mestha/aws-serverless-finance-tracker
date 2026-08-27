@@ -9,6 +9,7 @@ import { useFinance } from '../../context/FinanceContext';
 import { formatCurrency, formatDate, formatMonth } from '../../utils/formatters';
 import { CategoryIcon } from '../common/CategoryIcon';
 import { Transaction } from '../../types';
+import { FinancialAnalytics } from './FinancialAnalytics';
 
 interface DashboardViewProps {
   onOpenAddTxModal: (type: 'income' | 'expense') => void;
@@ -466,6 +467,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           )}
         </div>
       </div>
+      
+      {/* Financial Analytics Section */}
+      <FinancialAnalytics />
     </div>
   );
 };
