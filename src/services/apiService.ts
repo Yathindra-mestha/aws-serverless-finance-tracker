@@ -512,7 +512,11 @@ export const getRecurringTransactions = async (): Promise<any[]> => {
 };
 
 export const addRecurringTransaction = async (data: any): Promise<any> => {
-  throw new Error('Backend endpoint POST /recurring is missing and not implemented.');
+  const response = await apiFetch('/recurring', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return response;
 };
 
 export const updateRecurringTransaction = async (recurringId: string, active: boolean): Promise<any> => {
