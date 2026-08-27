@@ -505,7 +505,10 @@ export const ApiService = {
 
 // Recurring Transactions APIs
 export const getRecurringTransactions = async (): Promise<any[]> => {
-  throw new Error('Backend endpoint GET /recurring is missing and not implemented.');
+  const response = await apiFetch('/recurring', {
+    method: 'GET'
+  });
+  return response.recurringTransactions || [];
 };
 
 export const addRecurringTransaction = async (data: any): Promise<any> => {
