@@ -73,8 +73,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
   };
 
-  // ─── KPI Card data ───────────────────────────────────────
-  const kpiCards = [
+  const latestIncomeTx = React.useMemo(() => {
+    return transactions.find(t => t.type === 'income' && t.date.startsWith(activeMonthYear));
+  }, [transactions, activeMonthYear]);
+
+  const latestExpenseTx = React.useMemo(() => {
+    return transactions.find(t => t.type === 'expense' && t.date.startsWith(activeMonthYear));
+  }, [transactions, activeMonthYear]);
+
+  type KpiCard = {
+    id: string;
+    label: string;
+    value: string;
+    prefix: string;
+    hint: string;
+    icon: any;
+    accent: 'indigo' | 'emerald' | 'rose' | 'amber';
+    textClass: string;
+    onClick: () => void;
+    onEditAction?: () => void;
+    editTooltip?: string;
+  };
+
+  const kpiCards: KpiCard[] = [
     {
       id: 'balance',
       label: 'Net Balance',
@@ -85,6 +106,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       accent: 'indigo',
       textClass: 'text-gradient-primary',
       onClick: celebrate,
+      onEditAction: undefined as (() => void) | undefined,
+      editTooltip: undefined as string | undefined,
     },
     {
       id: 'income',
@@ -96,6 +119,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       accent: 'emerald',
       textClass: 'text-gradient-success',
       onClick: () => onOpenAddTxModal('income'),
+      onEditAction: latestIncomeTx ? () => onEditTransaction(latestIncomeTx) : undefined,
+      editTooltip: 'Edit most recent income',
     },
     {
       id: 'expenses',
@@ -107,6 +132,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       accent: 'rose',
       textClass: 'text-gradient-danger',
       onClick: () => onOpenAddTxModal('expense'),
+      onEditAction: latestExpenseTx ? () => onEditTransaction(latestExpenseTx) : undefined,
+      editTooltip: 'Edit most recent expense',
     },
     {
       id: 'budget',
@@ -164,7 +191,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* ── KPI Cards ──────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {kpiCards.map(({ id, label, value, prefix, hint, icon: Icon, accent, textClass, onClick }, i) => {
+        {kpiCards.map(({ id, label, value, prefix, hint, icon: Icon, accent, textClass, onClick, onEditAction, editTooltip }, i) => {
           const a = accentMap[accent];
           return (
             <div
@@ -173,11 +200,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className={`stat-card ${accent} glass-card glass-card-hover rounded-2xl p-5 cursor-pointer group stagger-${i+1} animate-fade-up`}
             >
               <div className="flex items-start justify-between mb-5">
-                <p
-                  className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em]"
-                >
-                  {label}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p
+                    className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em]"
+                  >
+                    {label}
+                  </p>
+                  {onEditAction && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEditAction(); }}
+                      className="p-1 -ml-1 rounded-md text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+                      title={editTooltip}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 <div
                   className={`p-2 rounded-xl border transition-all ${a.icon} ${a.hover}`}
                 >
