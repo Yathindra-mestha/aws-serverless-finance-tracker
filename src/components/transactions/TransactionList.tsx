@@ -21,8 +21,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [type, setType] = useState<'all' | 'income' | 'expense'>('all');
+  const [month, setMonth] = useState('all');
   const sym = user?.currencySymbol ?? '₹';
   const code = user?.currency ?? 'INR';
+
+  const availableMonths = Array.from(new Set(transactions.map(t => t.date.substring(0, 7)))).sort().reverse();
 
   const filtered = transactions.filter((t) => {
     if (search.trim()) {
@@ -31,8 +34,16 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     }
     if (category !== 'all' && t.category.toLowerCase() !== category.toLowerCase()) return false;
     if (type !== 'all' && t.type !== type) return false;
+    if (month !== 'all' && !t.date.startsWith(month)) return false;
     return true;
   });
+
+  const handleClearFilters = () => {
+    setSearch('');
+    setCategory('all');
+    setType('all');
+    setMonth('all');
+  };
 
   const totIncome  = filtered.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
   const totExpense = filtered.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
@@ -114,7 +125,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Type toggle */}
             <div className="flex items-center gap-0.5 bg-white/[0.04] border border-white/[0.07] rounded-xl p-1">
               {(['all','income','expense'] as const).map((t) => (
@@ -145,6 +156,31 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 <option key={catName} value={catName} className="bg-[#0b1120]">{catName}</option>
               ))}
             </select>
+
+            {/* Month select */}
+            <select
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="bg-white/[0.04] border border-white/[0.07] text-slate-300 text-[12px] rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500/50 cursor-pointer"
+            >
+              <option value="all" className="bg-[#0b1120]">All Months</option>
+              {availableMonths.map((m) => {
+                const dateObj = new Date(`${m}-01T00:00:00`);
+                const monthName = dateObj.toLocaleString('default', { month: 'short', year: 'numeric' });
+                return <option key={m} value={m} className="bg-[#0b1120]">{monthName}</option>;
+              })}
+            </select>
+
+            {/* Clear Filters */}
+            {(search || category !== 'all' || type !== 'all' || month !== 'all') && (
+              <button
+                onClick={handleClearFilters}
+                className="text-slate-400 hover:text-rose-400 text-[12px] font-bold px-2 py-2 transition-colors whitespace-nowrap"
+                title="Clear Filters"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </div>
