@@ -127,7 +127,7 @@ To manage your alerts, visit your FinTrack Cloud Dashboard.
         <div className="lg:col-span-6 rounded-2xl bg-slate-900/90 border border-slate-800 p-5 shadow-card space-y-4">
           <div className="pb-3 border-b border-slate-800">
             <h3 className="text-sm font-bold text-white">Email Subscription Settings</h3>
-            <p className="text-xs text-slate-400">SNS Topic: arn:aws:sns:ap-south-1:123456789012:FinanceMonthlySummaryTopic</p>
+            <p className="text-xs text-slate-400">SNS Topic: arn:aws:sns:ap-south-1:765959262630:FinTrackMonthlySummary</p>
           </div>
 
           <form onSubmit={handleSavePreferences} className="space-y-4">
@@ -224,7 +224,7 @@ To manage your alerts, visit your FinTrack Cloud Dashboard.
           </div>
 
           <p className="text-xs text-slate-400 leading-relaxed">
-            Test how AWS Lambda generates your monthly digest from DynamoDB and invokes <code className="text-amber-300 font-mono">sns.publish()</code>.
+            Preview the format of the monthly digest that AWS EventBridge and Lambda will dispatch to you via <code className="text-amber-300 font-mono">sns.publish()</code>.
           </p>
 
           <button
@@ -233,7 +233,7 @@ To manage your alerts, visit your FinTrack Cloud Dashboard.
             className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-slate-950 font-extrabold text-xs shadow-lg transition-all disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
-            <span>{isSending ? 'Invoking AWS Lambda & SNS...' : 'Test Send Monthly Summary Email (Simulated)'}</span>
+            <span>{isSending ? 'Generating UI Preview...' : 'View Simulated Email Preview'}</span>
           </button>
 
           {/* Email Preview Box */}

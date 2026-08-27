@@ -409,10 +409,10 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const sendSnsMonthlyDigest = async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
       const res = await ApiService.triggerMonthlySnsEmail(email, activeMonthYear);
-      showToast('success', 'SNS Email Dispatched! ✉️', res.message, 6000);
+      showToast('success', 'Preview Generated', 'This is a frontend simulation of the SNS email format.', 6000);
       return res;
     } catch (err: any) {
-      showToast('error', 'SNS Dispatch Failed', err.message);
+      showToast('error', 'Preview Failed', err.message);
       throw err;
     }
   };
