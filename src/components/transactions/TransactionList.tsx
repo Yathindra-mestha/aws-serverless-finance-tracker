@@ -49,13 +49,36 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   const totExpense = filtered.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
 
   const handleExportCSV = () => {
-    if (!filtered.length) return;
-    const rows = filtered.map((t) => [t.date, t.type.toUpperCase(), `"${t.category}"`, `"${t.description.replace(/"/g,'""')}"`, t.amount].join(','));
-    const csv = 'data:text/csv;charset=utf-8,' + encodeURIComponent(['Date,Type,Category,Description,Amount', ...rows].join('\n'));
+    if (!filtered.length) {
+      alert("No transactions to export.");
+      return;
+    }
+
+    const headers = ['Date', 'Type', 'Category', 'Amount', 'Description'];
+    const rows = filtered.map(t => {
+      const escapeCsv = (str: string) => `"${str.replace(/"/g, '""')}"`;
+      return [
+        t.date,
+        t.type.toUpperCase(),
+        escapeCsv(t.category),
+        t.amount,
+        escapeCsv(t.description)
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const now = new Date();
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
     const a = document.createElement('a');
-    a.href = csv;
-    a.download = `FinTrack_${new Date().toISOString().slice(0,10)}.csv`;
+    a.href = url;
+    a.download = `fintrack-transactions-${yearMonth}.csv`;
     a.click();
+    
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -90,8 +113,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             </button>
             <button
               onClick={handleExportCSV}
-              disabled={!filtered.length}
-              className="flex items-center gap-1.5 bg-white/[0.04] hover:bg-white/[0.07] text-slate-300 border border-white/[0.07] px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 bg-white/[0.04] hover:bg-white/[0.07] text-slate-300 border border-white/[0.07] px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-colors"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" /> Export CSV
             </button>
