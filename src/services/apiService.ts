@@ -524,5 +524,7 @@ export const updateRecurringTransaction = async (recurringId: string, active: bo
 };
 
 export const deleteRecurringTransaction = async (recurringId: string): Promise<void> => {
-  throw new Error('Backend endpoint DELETE /recurring/{recurringId} is missing and not implemented.');
+  await apiFetch(`/recurring/${encodeURIComponent(recurringId)}`, {
+    method: 'DELETE'
+  });
 };
