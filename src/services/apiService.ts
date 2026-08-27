@@ -7,43 +7,47 @@ const API_BASE_URL = (import.meta as any).env.VITE_API_URL;
 /**
  * Helper to get the current Cognito JWT access token from localStorage (managed by react-oidc-context)
  */
-const getCognitoToken = (): string | null => {
+const getCognitoTokens = (): { accessToken: string | null; idToken: string | null } => {
   try {
     const authority = (import.meta as any).env.VITE_COGNITO_AUTHORITY;
     const clientId = (import.meta as any).env.VITE_COGNITO_CLIENT_ID;
     const key = `oidc.user:${authority}:${clientId}`;
-    console.log(`[Auth] Looking for Cognito token in localStorage using key: ${key}`);
+    console.log(`[Auth] Looking for Cognito tokens in localStorage using key: ${key}`);
     const data = localStorage.getItem(key);
     
     if (data) {
       const parsed = JSON.parse(data);
-      if (parsed.access_token) {
-        console.log('[Auth] Successfully found access_token in localStorage session');
-        return parsed.access_token;
-      } else {
-        console.warn('[Auth] OIDC session found, but no access_token present.');
-      }
+      return {
+        accessToken: parsed.access_token || null,
+        idToken: parsed.id_token || null,
+      };
     } else {
       console.warn('[Auth] No OIDC session found in localStorage.');
     }
   } catch (e) {
-    console.error('[Auth] Failed to parse Cognito token from storage:', e);
+    console.error('[Auth] Failed to parse Cognito tokens from storage:', e);
   }
-  return null;
+  return { accessToken: null, idToken: null };
 };
+
+interface ApiFetchOptions extends RequestInit {
+  useIdToken?: boolean;
+}
 
 /**
  * Base fetch wrapper for authenticated API calls
  */
-const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+const apiFetch = async (endpoint: string, options: ApiFetchOptions = {}) => {
   if (!API_BASE_URL) {
     throw new Error('VITE_API_URL is not defined in environment variables');
   }
 
-  const token = getCognitoToken();
+  const tokens = getCognitoTokens();
+  const token = options.useIdToken ? tokens.idToken : tokens.accessToken;
+  
   if (!token) {
-    console.error(`[API] Cannot execute ${options.method || 'GET'} ${endpoint} - No access_token found`);
-    throw new Error('[UNAUTHORIZED] No valid Cognito access token found. Please sign in.');
+    console.error(`[API] Cannot execute ${options.method || 'GET'} ${endpoint} - No token found (useIdToken: ${!!options.useIdToken})`);
+    throw new Error('[UNAUTHORIZED] No valid Cognito token found. Please sign in.');
   }
 
   const headers: Record<string, string> = {
@@ -408,6 +412,7 @@ export const ApiService = {
       await apiFetch('/notifications/subscribe', {
         method: 'POST',
         body: JSON.stringify({ enabled: prefs.monthlyEmailDigest }),
+        useIdToken: true, // Use id_token so Lambda gets claims.email
       });
 
       awsLogger.log({
