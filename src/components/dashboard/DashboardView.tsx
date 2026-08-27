@@ -40,6 +40,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     ? monthTx.filter((t) => t.category.toLowerCase() === activeCategory.toLowerCase())
     : monthTx.slice(0, 6);
 
+  // ── Comparison Logic ──────────────────────────────────────────────────────
+  const [y, m] = activeMonthYear.split('-');
+  const lastMonthDate = new Date(parseInt(y, 10), parseInt(m, 10) - 2, 1);
+  const lastMonthStr = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  
+  const lastMonthTx = transactions.filter((t) => t.date.startsWith(lastMonthStr));
+  const hasLastMonthData = lastMonthTx.length > 0;
+  
+  const lastMonthIncome = lastMonthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const lastMonthExpenses = lastMonthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const lastMonthSavings = lastMonthIncome - lastMonthExpenses;
+  
+  const currentSavings = totalIncome - totalExpenses;
+  
+  const getDiffText = (current: number, previous: number, label: string) => {
+    if (!hasLastMonthData) return "Not enough data to compare with last month.";
+    if (previous === 0) {
+      const diff = current - previous;
+      if (diff === 0) return `${label} is the same as last month.`;
+      const direction = diff >= 0 ? "increased" : "decreased";
+      return `${label} ${direction} by ${formatCurrency(Math.abs(diff), code, sym)} compared with last month.`;
+    }
+    
+    const diff = current - previous;
+    if (diff === 0) return `${label} is the same as last month.`;
+    
+    const pct = Math.abs((diff / previous) * 100).toFixed(0);
+    const direction = diff >= 0 ? "increased" : "decreased";
+    
+    return `${label} ${direction} by ${pct}% (${formatCurrency(Math.abs(diff), code, sym)}) compared with last month.`;
+  };
+  
+  const getSavingsText = (current: number, previous: number) => {
+    if (!hasLastMonthData) return "Not enough data to compare with last month.";
+    const diff = current - previous;
+    if (diff > 0) return `You saved ${formatCurrency(diff, code, sym)} more than last month.`;
+    if (diff < 0) return `You saved ${formatCurrency(Math.abs(diff), code, sym)} less than last month.`;
+    return `You saved the same amount as last month.`;
+  };
+
   const clamp = Math.min(budgetUsedPercentage, 100);
   const budgetStatus =
     monthlyBudget === 0 ? 'unset' :
@@ -236,6 +276,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           );
         })}
+      </div>
+
+      {/* ── This Month vs Last Month ───────────────────────────────────────── */}
+      <div className="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div>
+            <h3 className="text-[14px] font-bold text-white" style={{ letterSpacing: '-0.02em' }}>
+              This Month vs Last Month
+            </h3>
+            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              {hasLastMonthData ? `Performance compared to ${formatMonth(lastMonthStr)}` : 'No data available for last month.'}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-4">
+             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em] mb-1">Income</p>
+             <p className="text-[13px] text-slate-300">{getDiffText(totalIncome, lastMonthIncome, 'Income')}</p>
+          </div>
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-4">
+             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em] mb-1">Expenses</p>
+             <p className="text-[13px] text-slate-300">{getDiffText(totalExpenses, lastMonthExpenses, 'Expenses')}</p>
+          </div>
+          <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-4">
+             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em] mb-1">Savings</p>
+             <p className="text-[13px] text-slate-300">{getSavingsText(currentSavings, lastMonthSavings)}</p>
+          </div>
+        </div>
       </div>
 
       {/* ── Budget Status ──────────────────────────────────────── */}
