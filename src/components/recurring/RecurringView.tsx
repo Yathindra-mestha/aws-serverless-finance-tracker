@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, RefreshCw, Calendar, AlertCircle, Edit3 } from 'lucide-react';
+import { Plus, RefreshCw, Calendar, AlertCircle, Edit3, Pause, Play } from 'lucide-react';
 import { RecurringTransaction } from '../../types';
 import { getRecurringTransactions, addRecurringTransaction, deleteRecurringTransaction, updateRecurringTransaction } from '../../services/apiService';
 import { useAuth } from '../../context/AuthContext';
@@ -43,6 +43,15 @@ export const RecurringView: React.FC = () => {
   const handleEdit = async (recurringId: string, data: Record<string, any>) => {
     await updateRecurringTransaction(recurringId, data);
     await fetchRecurring();
+  };
+
+  const handleToggleActive = async (tx: RecurringTransaction) => {
+    try {
+      await updateRecurringTransaction(tx.recurringId, { active: !tx.active });
+      await fetchRecurring();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update recurring transaction status');
+    }
   };
 
   const handleDelete = async (recurringId: string) => {
@@ -129,6 +138,17 @@ export const RecurringView: React.FC = () => {
                       </p>
                       <p className="text-[11px] text-slate-500 uppercase tracking-wider">{tx.type}</p>
                     </div>
+                    <button
+                      onClick={() => handleToggleActive(tx)}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        tx.active 
+                          ? 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/10' 
+                          : 'text-amber-400 hover:text-emerald-400 hover:bg-emerald-500/10'
+                      }`}
+                      title={tx.active ? 'Pause Rule' : 'Resume Rule'}
+                    >
+                      {tx.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" fill="currentColor" />}
+                    </button>
                     <button
                       onClick={() => setEditingRule(tx)}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
