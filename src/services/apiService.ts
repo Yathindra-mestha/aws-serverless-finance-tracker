@@ -519,8 +519,12 @@ export const addRecurringTransaction = async (data: any): Promise<any> => {
   return response;
 };
 
-export const updateRecurringTransaction = async (recurringId: string, active: boolean): Promise<any> => {
-  throw new Error('Backend endpoint PUT /recurring/{recurringId} is missing and not implemented.');
+export const updateRecurringTransaction = async (recurringId: string, data: Record<string, any>): Promise<any> => {
+  const response = await apiFetch(`/recurring/${encodeURIComponent(recurringId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  });
+  return response;
 };
 
 export const deleteRecurringTransaction = async (recurringId: string): Promise<void> => {

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, RefreshCw, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, RefreshCw, Calendar, AlertCircle, Edit3 } from 'lucide-react';
 import { RecurringTransaction } from '../../types';
-import { getRecurringTransactions, addRecurringTransaction, deleteRecurringTransaction } from '../../services/apiService';
+import { getRecurringTransactions, addRecurringTransaction, deleteRecurringTransaction, updateRecurringTransaction } from '../../services/apiService';
 import { useAuth } from '../../context/AuthContext';
 import { AddRecurringModal } from './AddRecurringModal';
+import { EditRecurringModal } from './EditRecurringModal';
 import { formatCurrency } from '../../utils/formatters';
 
 export const RecurringView: React.FC = () => {
@@ -12,6 +13,7 @@ export const RecurringView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<RecurringTransaction | null>(null);
   
   const sym = user?.currencySymbol ?? '₹';
   const code = user?.currency ?? 'INR';
@@ -35,6 +37,11 @@ export const RecurringView: React.FC = () => {
 
   const handleAdd = async (data: any) => {
     await addRecurringTransaction(data);
+    await fetchRecurring();
+  };
+
+  const handleEdit = async (recurringId: string, data: Record<string, any>) => {
+    await updateRecurringTransaction(recurringId, data);
     await fetchRecurring();
   };
 
@@ -111,9 +118,10 @@ export const RecurringView: React.FC = () => {
                     <p className="text-[14px] font-bold text-slate-200">{tx.description || tx.category}</p>
                     <p className="text-[12px] text-slate-500">
                       Monthly on the {tx.dayOfMonth} • Starts {tx.startDate}
+                      {!tx.active && <span className="ml-2 text-amber-400 font-bold">⏸ Paused</span>}
                     </p>
                   </div>
-                  <div className="text-right flex items-center gap-4">
+                  <div className="text-right flex items-center gap-3">
                     <div>
                       <p className={`text-[14px] font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {tx.type === 'income' ? '+' : '−'}
@@ -121,6 +129,13 @@ export const RecurringView: React.FC = () => {
                       </p>
                       <p className="text-[11px] text-slate-500 uppercase tracking-wider">{tx.type}</p>
                     </div>
+                    <button
+                      onClick={() => setEditingRule(tx)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                      title="Edit Rule"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                     <button 
                       onClick={() => handleDelete(tx.recurringId)}
                       className="text-[11px] font-bold text-slate-500 hover:text-rose-400 px-2 py-1 transition-colors"
@@ -139,6 +154,16 @@ export const RecurringView: React.FC = () => {
         <AddRecurringModal
           onClose={() => setIsAddModalOpen(false)}
           onAdd={handleAdd}
+          currencyCode={code}
+          currencySymbol={sym}
+        />
+      )}
+
+      {editingRule && (
+        <EditRecurringModal
+          rule={editingRule}
+          onClose={() => setEditingRule(null)}
+          onSave={handleEdit}
           currencyCode={code}
           currencySymbol={sym}
         />
