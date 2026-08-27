@@ -53,9 +53,9 @@ export const AddRecurringModal: React.FC<AddRecurringModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md max-h-[calc(100vh-40px)] flex flex-col glass-card rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md max-h-full flex flex-col glass-card rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between p-5 border-b border-white/[0.06] shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-400" />
@@ -66,8 +66,8 @@ export const AddRecurringModal: React.FC<AddRecurringModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden min-h-0">
-          <div className="p-5 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+          <div className="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             {error && (
               <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[13px] font-medium leading-relaxed">
                 {error}
