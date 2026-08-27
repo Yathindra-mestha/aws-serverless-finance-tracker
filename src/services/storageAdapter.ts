@@ -24,7 +24,7 @@ const DEFAULT_AWS_CONFIG: AWSServerlessConfig = {
   cognitoClientId: '3n098kjl345a90sd8f7a8sdf',
   apiGatewayEndpoint: 'https://api.fintrack.aws.yourdomain.com/v1',
   dynamoDbTableName: 'FinTrack_Transactions_Prod',
-  snsTopicArn: 'arn:aws:sns:ap-south-1:123456789012:FinanceMonthlySummaryTopic',
+  snsTopicArn: 'arn:aws:sns:ap-south-1:765959262630:FinTrackMonthlySummary',
   mockMode: true,
 };
 

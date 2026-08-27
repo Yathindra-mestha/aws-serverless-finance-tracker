@@ -445,10 +445,17 @@ export const ApiService = {
       latencyMs: 12,
     });
 
-    // Log SNS Publish
+    awsLogger.log({
+      service: 'Lambda',
+      action: 'Invoke (Async)',
+      details: `monthlyFinanceSummary triggered by EventBridge`,
+      status: '200 OK',
+      latencyMs: 145,
+    });
+
     awsLogger.log({
       service: 'SNS',
-      action: 'Publish (TopicArn = arn:aws:sns:...:FinanceMonthlySummaryTopic)',
+      action: 'Publish (TopicArn = arn:aws:sns:ap-south-1:765959262630:FinTrackMonthlySummary)',
       details: `Dispatched summary email payload to ${email} (MessageId: ${messageId})`,
       status: 'Published',
       latencyMs: 65,

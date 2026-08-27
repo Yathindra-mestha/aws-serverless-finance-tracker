@@ -47,7 +47,7 @@ export const SnsNotificationConfig: React.FC = () => {
     e.preventDefault();
     await updateNotificationPrefs({
       email,
-      snsTopicArn: notificationPrefs?.snsTopicArn || 'arn:aws:sns:ap-south-1:123456789012:FinanceMonthlySummaryTopic',
+      snsTopicArn: notificationPrefs?.snsTopicArn || 'arn:aws:sns:ap-south-1:765959262630:FinTrackMonthlySummary',
       snsSubscriptionStatus: 'Subscribed',
       monthlyEmailDigest: monthlyDigest,
       budgetAlerts,
@@ -63,7 +63,7 @@ export const SnsNotificationConfig: React.FC = () => {
 
       // Generate visual email preview
       const preview = `
-[AWS SNS Notification: FinanceMonthlySummaryTopic]
+[AWS SNS Notification: FinTrackMonthlySummary]
 From: no-reply@sns.amazonaws.com
 To: ${email}
 Subject: 📊 Your Monthly Financial Digest for ${formatMonth(activeMonthYear)}

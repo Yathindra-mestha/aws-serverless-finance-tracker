@@ -28,7 +28,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [];
 
 export const INITIAL_NOTIFICATION_PREFS: NotificationPreferences = {
   email: 'alex.cloud.dev@example.com',
-  snsTopicArn: 'arn:aws:sns:ap-south-1:123456789012:FinanceMonthlySummaryTopic',
+  snsTopicArn: 'arn:aws:sns:ap-south-1:765959262630:FinTrackMonthlySummary',
   snsSubscriptionStatus: 'Subscribed',
   monthlyEmailDigest: true,
   budgetAlerts: true,
