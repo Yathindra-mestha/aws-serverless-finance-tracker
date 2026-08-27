@@ -65,20 +65,22 @@ export const FinancialAnalytics: React.FC = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Income vs Expenses Bar Chart */}
-        <div className="glass-card rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-white mb-4">Income vs Expenses (Monthly)</h3>
-          <div className="h-64 w-full">
+        <div className="glass-card rounded-2xl p-5 flex flex-col">
+          <h3 className="text-sm font-bold text-white mb-6">Income vs Expenses (Monthly)</h3>
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${sym}${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${sym}${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} dx={-10} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
-                  itemStyle={{ color: '#e2e8f0' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px', color: '#f8fafc' }}
+                  itemStyle={{ color: '#e2e8f0', padding: 0 }}
+                  labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
                   formatter={formatTooltipCurrency}
                 />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 <Bar dataKey="expense" name="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
               </BarChart>
@@ -87,19 +89,19 @@ export const FinancialAnalytics: React.FC = () => {
         </div>
 
         {/* Spending by Category Pie Chart */}
-        <div className="glass-card rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-white mb-4">Expenses by Category ({activeMonthYear})</h3>
-          <div className="h-64 w-full flex items-center justify-center">
+        <div className="glass-card rounded-2xl p-5 flex flex-col">
+          <h3 className="text-sm font-bold text-white mb-6">Expenses by Category ({activeMonthYear})</h3>
+          <div className="h-72 w-full flex items-center justify-center">
             {categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 20 }}>
                   <Pie
                     data={categoryData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    cy="45%"
+                    innerRadius={70}
+                    outerRadius={95}
+                    paddingAngle={3}
                     dataKey="value"
                     stroke="none"
                   >
@@ -108,10 +110,18 @@ export const FinancialAnalytics: React.FC = () => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px', color: '#f8fafc' }}
+                    itemStyle={{ color: '#e2e8f0', padding: 0 }}
+                    labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
                     formatter={formatTooltipCurrency}
                   />
-                  <Legend layout="vertical" verticalAlign="middle" align="right" iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                  <Legend 
+                    layout="horizontal" 
+                    verticalAlign="bottom" 
+                    align="center" 
+                    iconType="circle" 
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }} 
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -121,19 +131,23 @@ export const FinancialAnalytics: React.FC = () => {
         </div>
         
         {/* Net Balance / Savings Trend Line Chart */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-5">
-          <h3 className="text-sm font-bold text-white mb-4">Net Savings Trend</h3>
-          <div className="h-64 w-full">
+        <div className="lg:col-span-2 glass-card rounded-2xl p-5 flex flex-col">
+          <h3 className="text-sm font-bold text-white mb-6">Net Savings Trend</h3>
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <LineChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${sym}${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} />
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${sym}${val >= 1000 ? (val/1000).toFixed(0) + 'k' : val}`} dx={-10} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px' }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', fontSize: '12px', color: '#f8fafc' }}
+                  itemStyle={{ color: '#e2e8f0', padding: 0 }}
+                  labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
                   formatter={formatTooltipCurrency}
                 />
-                <Line type="monotone" dataKey="balance" name="Net Balance" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#6366f1', strokeWidth: 2, stroke: '#0f172a' }} activeDot={{ r: 6 }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                <Line type="monotone" dataKey="balance" name="Net Balance" stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: '#0f172a', strokeWidth: 2, stroke: '#6366f1' }} activeDot={{ r: 6, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
