@@ -119,3 +119,18 @@ export interface AWSServerlessConfig {
   snsTopicArn: string;
   mockMode: boolean;
 }
+export interface RecurringTransaction {
+  recurringId: string;
+  userId: string;
+  amount: number;
+  type: TransactionType;
+  category: string;
+  description: string;
+  frequency: 'monthly';
+  dayOfMonth: number;
+  startDate: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastProcessedMonth?: string;
+}

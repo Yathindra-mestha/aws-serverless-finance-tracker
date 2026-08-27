@@ -17,6 +17,7 @@ const TABS = [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
   { id: 'transactions', label: 'Transactions', icon: ListOrdered },
   { id: 'budget',       label: 'Budget',       icon: Target },
+  { id: 'recurring',    label: 'Recurring',    icon: RefreshCw },
 ];
 
 const MONTHS = ['2026-08','2026-07','2026-06','2026-05','2026-04','2026-03'];

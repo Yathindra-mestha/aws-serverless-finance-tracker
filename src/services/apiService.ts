@@ -502,3 +502,20 @@ export const ApiService = {
     this.clearToZero();
   },
 };
+
+// Recurring Transactions APIs
+export const getRecurringTransactions = async (): Promise<any[]> => {
+  throw new Error('Backend endpoint GET /recurring is missing and not implemented.');
+};
+
+export const addRecurringTransaction = async (data: any): Promise<any> => {
+  throw new Error('Backend endpoint POST /recurring is missing and not implemented.');
+};
+
+export const updateRecurringTransaction = async (recurringId: string, active: boolean): Promise<any> => {
+  throw new Error('Backend endpoint PUT /recurring/{recurringId} is missing and not implemented.');
+};
+
+export const deleteRecurringTransaction = async (recurringId: string): Promise<void> => {
+  throw new Error('Backend endpoint DELETE /recurring/{recurringId} is missing and not implemented.');
+};

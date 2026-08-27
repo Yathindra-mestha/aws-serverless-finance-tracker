@@ -7,6 +7,7 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { TransactionList } from './components/transactions/TransactionList';
 import { BudgetManager } from './components/budget/BudgetManager';
 import { BudgetView } from './components/budget/BudgetView';
+import { RecurringView } from './components/recurring/RecurringView';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { DeleteConfirmModal } from './components/transactions/DeleteConfirmModal';
 import { AwsArchitectureModal } from './components/aws/AwsArchitectureModal';
@@ -95,6 +96,9 @@ const MainLayout: React.FC = () => {
         )}
         {activeTab === 'budget' && (
           <BudgetView />
+        )}
+        {activeTab === 'recurring' && (
+          <RecurringView />
         )}
         {activeTab === 'profile' && (
           <ProfileView />
