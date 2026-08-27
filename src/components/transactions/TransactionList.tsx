@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Plus, Minus, Edit3, Trash2, FileSpreadsheet, Filter } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, Plus, Minus, Edit3, Trash2, FileSpreadsheet, Filter, X, ChevronDown, ChevronUp, DollarSign, Calendar } from 'lucide-react';
 import { Transaction } from '../../types';
 
 import { useAuth } from '../../context/AuthContext';
@@ -18,36 +18,110 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 }) => {
   const { user } = useAuth();
   const { transactions } = useFinance();
+
+  // ── Filter state ──────────────────────────────────────────
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [type, setType] = useState<'all' | 'income' | 'expense'>('all');
   const [month, setMonth] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [amountMin, setAmountMin] = useState('');
+  const [amountMax, setAmountMax] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const sym = user?.currencySymbol ?? '₹';
   const code = user?.currency ?? 'INR';
 
-  const availableMonths = Array.from(new Set(transactions.map(t => t.date.substring(0, 7)))).sort().reverse();
+  const availableMonths = useMemo(
+    () => Array.from(new Set(transactions.map(t => t.date.substring(0, 7)))).sort().reverse(),
+    [transactions]
+  );
 
-  const filtered = transactions.filter((t) => {
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      if (!t.description.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q)) return false;
-    }
-    if (category !== 'all' && t.category.toLowerCase() !== category.toLowerCase()) return false;
-    if (type !== 'all' && t.type !== type) return false;
-    if (month !== 'all' && !t.date.startsWith(month)) return false;
-    return true;
-  });
+  const uniqueCategories = useMemo(
+    () => Array.from(new Set(transactions.map(t => t.category))).sort(),
+    [transactions]
+  );
+
+  // ── Filtering logic ───────────────────────────────────────
+  const filtered = useMemo(() => {
+    return transactions.filter((t) => {
+      // Search filter: description + category (case-insensitive)
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (
+          !t.description.toLowerCase().includes(q) &&
+          !t.category.toLowerCase().includes(q)
+        ) return false;
+      }
+
+      // Type filter
+      if (type !== 'all' && t.type !== type) return false;
+
+      // Category filter
+      if (category !== 'all' && t.category.toLowerCase() !== category.toLowerCase()) return false;
+
+      // Month filter
+      if (month !== 'all' && !t.date.startsWith(month)) return false;
+
+      // Custom date range: From
+      if (dateFrom && t.date < dateFrom) return false;
+
+      // Custom date range: To
+      if (dateTo && t.date > dateTo) return false;
+
+      // Amount range: Min
+      if (amountMin !== '') {
+        const min = parseFloat(amountMin);
+        if (!isNaN(min) && t.amount < min) return false;
+      }
+
+      // Amount range: Max
+      if (amountMax !== '') {
+        const max = parseFloat(amountMax);
+        if (!isNaN(max) && t.amount > max) return false;
+      }
+
+      return true;
+    });
+  }, [transactions, search, type, category, month, dateFrom, dateTo, amountMin, amountMax]);
+
+  // ── Is any filter active? ─────────────────────────────────
+  const isFiltered =
+    search !== '' ||
+    category !== 'all' ||
+    type !== 'all' ||
+    month !== 'all' ||
+    dateFrom !== '' ||
+    dateTo !== '' ||
+    amountMin !== '' ||
+    amountMax !== '';
+
+  const activeFilterCount = [
+    search !== '',
+    category !== 'all',
+    type !== 'all',
+    month !== 'all',
+    dateFrom !== '' || dateTo !== '',
+    amountMin !== '' || amountMax !== '',
+  ].filter(Boolean).length;
 
   const handleClearFilters = () => {
     setSearch('');
     setCategory('all');
     setType('all');
     setMonth('all');
+    setDateFrom('');
+    setDateTo('');
+    setAmountMin('');
+    setAmountMax('');
   };
 
+  // ── Summaries ─────────────────────────────────────────────
   const totIncome  = filtered.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
   const totExpense = filtered.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
 
+  // ── CSV Export ─────────────────────────────────────────────
   const handleExportCSV = () => {
     if (!filtered.length) {
       alert("No transactions to export.");
@@ -80,6 +154,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     
     URL.revokeObjectURL(url);
   };
+
+  // ── Shared input classes ──────────────────────────────────
+  const inputCls = "bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 rounded-xl text-[13px] text-slate-200 placeholder-slate-600 outline-none transition-all";
 
   return (
     <div className="space-y-4 animate-fade-up">
@@ -134,7 +211,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           ))}
         </div>
 
-        {/* Filter bar */}
+        {/* ── Primary filter bar ─────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -142,9 +219,17 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by description or category…"
-              className="w-full bg-white/[0.03] border border-white/[0.07] focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 rounded-xl pl-10 pr-4 py-2.5 text-[13px] text-slate-200 placeholder-slate-600 outline-none transition-all"
+              className={`w-full pl-10 pr-9 py-2.5 ${inputCls}`}
               style={{ letterSpacing: '-0.01em' }}
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -174,7 +259,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               className="bg-white/[0.04] border border-white/[0.07] text-slate-300 text-[12px] rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500/50 cursor-pointer"
             >
               <option value="all" className="bg-[#0b1120]">All Categories</option>
-              {Array.from(new Set(transactions.map(t => t.category))).sort().map((catName) => (
+              {uniqueCategories.map((catName) => (
                 <option key={catName} value={catName} className="bg-[#0b1120]">{catName}</option>
               ))}
             </select>
@@ -193,19 +278,117 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               })}
             </select>
 
+            {/* Advanced filters toggle */}
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className={`flex items-center gap-1 px-3 py-2 rounded-xl text-[12px] font-bold transition-all border ${
+                showAdvanced || dateFrom || dateTo || amountMin || amountMax
+                  ? 'bg-indigo-600/15 text-indigo-300 border-indigo-500/30'
+                  : 'bg-white/[0.04] text-slate-400 border-white/[0.07] hover:text-slate-200'
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              More
+              {showAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {(dateFrom || dateTo || amountMin || amountMax) && !showAdvanced && (
+                <span className="ml-0.5 w-4 h-4 flex items-center justify-center bg-indigo-500 text-white text-[10px] font-bold rounded-full">
+                  {[dateFrom || dateTo ? 1 : 0, amountMin || amountMax ? 1 : 0].reduce((a,b) => a+b, 0)}
+                </span>
+              )}
+            </button>
+
             {/* Clear Filters */}
-            {(search || category !== 'all' || type !== 'all' || month !== 'all') && (
+            {isFiltered && (
               <button
                 onClick={handleClearFilters}
-                className="text-slate-400 hover:text-rose-400 text-[12px] font-bold px-2 py-2 transition-colors whitespace-nowrap"
-                title="Clear Filters"
+                className="flex items-center gap-1 text-rose-400 hover:text-rose-300 text-[12px] font-bold px-2 py-2 transition-colors whitespace-nowrap"
+                title="Clear All Filters"
               >
-                Clear
+                <X className="w-3 h-3" />
+                Clear{activeFilterCount > 1 ? ` (${activeFilterCount})` : ''}
               </button>
             )}
           </div>
         </div>
+
+        {/* ── Advanced filters (collapsible) ────────────────── */}
+        {showAdvanced && (
+          <div className="mt-3 pt-3 border-t border-white/[0.06] grid grid-cols-1 sm:grid-cols-2 gap-3 animate-fade-up">
+            {/* Date Range */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em]">
+                <Calendar className="w-3 h-3 text-indigo-400" />
+                Date Range
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className={`flex-1 px-3 py-2 ${inputCls} [color-scheme:dark]`}
+                  placeholder="From"
+                />
+                <span className="text-slate-600 text-[11px]">to</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className={`flex-1 px-3 py-2 ${inputCls} [color-scheme:dark]`}
+                  placeholder="To"
+                />
+              </div>
+            </div>
+
+            {/* Amount Range */}
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-[0.07em]">
+                <DollarSign className="w-3 h-3 text-indigo-400" />
+                Amount Range
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={amountMin}
+                  onChange={(e) => setAmountMin(e.target.value)}
+                  className={`flex-1 px-3 py-2 ${inputCls}`}
+                  placeholder="Min"
+                  min="0"
+                  step="any"
+                />
+                <span className="text-slate-600 text-[11px]">to</span>
+                <input
+                  type="number"
+                  value={amountMax}
+                  onChange={(e) => setAmountMax(e.target.value)}
+                  className={`flex-1 px-3 py-2 ${inputCls}`}
+                  placeholder="Max"
+                  min="0"
+                  step="any"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* ── Results status bar ────────────────────────────────── */}
+      {isFiltered && (
+        <div className="flex items-center justify-between px-4 py-2 rounded-xl bg-indigo-500/8 border border-indigo-500/15 text-[12px]">
+          <span className="text-slate-400">
+            <span className="text-white font-bold">{filtered.length}</span>
+            {filtered.length === 1 ? ' transaction found' : ' transactions found'}
+            {filtered.length === 0 && (
+              <span className="text-slate-500 ml-1">— try adjusting your filters</span>
+            )}
+          </span>
+          <button
+            onClick={handleClearFilters}
+            className="text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
+          >
+            Clear All
+          </button>
+        </div>
+      )}
 
       {/* ── List ───────────────────────────────────────────────── */}
       <div className="glass-card rounded-2xl overflow-hidden">
@@ -214,8 +397,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <div className="w-14 h-14 rounded-2xl bg-slate-800/50 border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
               <Filter className="w-6 h-6 text-slate-600" />
             </div>
-            <p className="text-[14px] font-bold text-slate-300">No transactions found</p>
-            <p className="text-[12px] text-slate-600 mt-1">Adjust your search or filters.</p>
+            <p className="text-[14px] font-bold text-slate-300">
+              {isFiltered ? 'No transactions match your filters.' : 'No transactions found'}
+            </p>
+            <p className="text-[12px] text-slate-600 mt-1">
+              {isFiltered
+                ? 'Try broadening your search or clearing filters.'
+                : 'Add your first income or expense to get started.'}
+            </p>
+            {isFiltered && (
+              <button
+                onClick={handleClearFilters}
+                className="mt-3 inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-[12px] font-bold transition-colors"
+              >
+                <X className="w-3 h-3" /> Clear All Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-white/[0.04]">
