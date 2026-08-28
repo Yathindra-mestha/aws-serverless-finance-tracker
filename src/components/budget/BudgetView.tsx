@@ -93,14 +93,14 @@ export const BudgetView: React.FC = () => {
     <div className="space-y-6 animate-fade-up max-w-2xl mx-auto">
 
       {/* Top Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight">Monthly Budget Planner</h1>
           <p className="text-xs text-slate-400 mt-0.5 font-mono">DynamoDB · PK=USER#demo | SK=BUDGET#</p>
         </div>
         <button
           onClick={handleSave}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] ${
+          className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.97] w-full sm:w-auto ${
             saved ? 'bg-emerald-600 shadow-emerald' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo'
           }`}
         >

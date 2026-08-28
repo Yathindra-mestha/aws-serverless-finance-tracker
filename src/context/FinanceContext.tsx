@@ -21,6 +21,7 @@ import { ApiService } from '../services/apiService';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
 import { getCurrentMonthYear } from '../utils/formatters';
 import { useToast } from './ToastContext';
+import { useAuth } from './AuthContext';
 
 interface FinanceContextType {
   transactions: Transaction[];
@@ -73,8 +74,10 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const { showToast } = useToast();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   const loadAllData = useCallback(async () => {
+    if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const [txs, bgt, prefs] = await Promise.all([
@@ -87,6 +90,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       setNotificationPrefs(prefs);
     } catch (err: any) {
       if (err.message && err.message.includes('[UNAUTHORIZED]')) {
+        // Only show session expired if we actually have an auth token error, not during initial load
         showToast('error', 'Session Expired', 'Please sign in again to access your data.', 6000);
       } else {
         showToast('error', 'Failed to fetch data', err.message);
@@ -94,11 +98,19 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     } finally {
       setIsLoading(false);
     }
-  }, [activeMonthYear, showToast]);
+  }, [activeMonthYear, showToast, isAuthenticated]);
 
   useEffect(() => {
-    loadAllData();
-  }, [loadAllData]);
+    if (isAuthenticated && !isAuthLoading) {
+      loadAllData();
+    } else if (!isAuthenticated && !isAuthLoading) {
+      // Clear data when logged out
+      setTransactions([]);
+      setBudget(null);
+      setNotificationPrefs(null);
+      setIsLoading(false);
+    }
+  }, [loadAllData, isAuthenticated, isAuthLoading]);
 
   // Reset Filters Helper
   const resetFilters = useCallback(() => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, RefreshCw, Calendar, AlertCircle, Edit3, Pause, Play } from 'lucide-react';
+import { Plus, RefreshCw, Calendar, AlertCircle, Edit3, Pause, Play, Trash2 } from 'lucide-react';
 import { RecurringTransaction } from '../../types';
 import { getRecurringTransactions, addRecurringTransaction, deleteRecurringTransaction, updateRecurringTransaction } from '../../services/apiService';
 import { useAuth } from '../../context/AuthContext';
@@ -122,46 +122,49 @@ export const RecurringView: React.FC = () => {
           ) : (
             <div className="divide-y divide-white/[0.04]">
               {recurringTxs.map(tx => (
-                <div key={tx.recurringId} className="p-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                <div key={tx.recurringId} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
                   <div>
-                    <p className="text-[14px] font-bold text-slate-200">{tx.description || tx.category}</p>
+                    <p className="text-[14px] font-bold text-slate-200 break-words">{tx.description || tx.category}</p>
                     <p className="text-[12px] text-slate-500">
-                      Monthly on the {tx.dayOfMonth} • Starts {tx.startDate}
+                      Monthly on the {tx.dayOfMonth} · Starts {tx.startDate}
                       {!tx.active && <span className="ml-2 text-amber-400 font-bold">⏸ Paused</span>}
                     </p>
                   </div>
-                  <div className="text-right flex items-center gap-3">
-                    <div>
+                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
+                    <div className="text-left sm:text-right">
                       <p className={`text-[14px] font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {tx.type === 'income' ? '+' : '−'}
                         {formatCurrency(tx.amount, code, sym)}
                       </p>
                       <p className="text-[11px] text-slate-500 uppercase tracking-wider">{tx.type}</p>
                     </div>
-                    <button
-                      onClick={() => handleToggleActive(tx)}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        tx.active 
-                          ? 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/10' 
-                          : 'text-amber-400 hover:text-emerald-400 hover:bg-emerald-500/10'
-                      }`}
-                      title={tx.active ? 'Pause Rule' : 'Resume Rule'}
-                    >
-                      {tx.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" fill="currentColor" />}
-                    </button>
-                    <button
-                      onClick={() => setEditingRule(tx)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
-                      title="Edit Rule"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(tx.recurringId)}
-                      className="text-[11px] font-bold text-slate-500 hover:text-rose-400 px-2 py-1 transition-colors"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleToggleActive(tx)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          tx.active 
+                            ? 'text-slate-400 hover:text-amber-400 hover:bg-amber-500/10' 
+                            : 'text-amber-400 hover:text-emerald-400 hover:bg-emerald-500/10'
+                        }`}
+                        title={tx.active ? 'Pause Rule' : 'Resume Rule'}
+                      >
+                        {tx.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" fill="currentColor" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingRule(tx)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                        title="Edit Rule"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(tx.recurringId)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        title="Delete Rule"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
