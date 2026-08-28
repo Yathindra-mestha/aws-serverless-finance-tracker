@@ -15,7 +15,7 @@ import { AwsLiveConsoleDrawer } from './components/aws/AwsLiveConsoleDrawer';
 import { AuthModal } from './components/auth/AuthModal';
 import { ProfileView } from './components/profile/ProfileView';
 import { Transaction, TransactionType } from './types';
-import { Layers, RotateCcw, Shield, Cloud } from 'lucide-react';
+import { Layers, RotateCcw, Shield, Cloud, ListOrdered, Target, RefreshCw } from 'lucide-react';
 
 // ── Toast ────────────────────────────────────────────────────
 const Toast: React.FC = () => {
@@ -65,7 +65,7 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col selection:bg-indigo-500/30 selection:text-white" style={{ paddingBottom: '60px' }}>
+    <div className="min-h-screen flex flex-col selection:bg-indigo-500/30 selection:text-white pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0">
 
       {/* Header */}
       <Header
@@ -140,6 +140,33 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* ── Bottom Navigation (Mobile Only) ──────────────────────── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#080C14]/90 backdrop-blur-xl border-t border-white/[0.08] px-2 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around h-16">
+          <button
+            onClick={() => setActiveTab('transactions')}
+            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeTab === 'transactions' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <ListOrdered className="w-5 h-5" strokeWidth={activeTab === 'transactions' ? 2.5 : 2} />
+            <span className="text-[10px] font-semibold tracking-wide">Transactions</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('budget')}
+            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeTab === 'budget' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <Target className="w-5 h-5" strokeWidth={activeTab === 'budget' ? 2.5 : 2} />
+            <span className="text-[10px] font-semibold tracking-wide">Budget</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('recurring')}
+            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeTab === 'recurring' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            <RefreshCw className="w-5 h-5" strokeWidth={activeTab === 'recurring' ? 2.5 : 2} />
+            <span className="text-[10px] font-semibold tracking-wide">Recurring</span>
+          </button>
+        </div>
+      </nav>
 
       {/* ── All Modals ─────────────────────────────────────────── */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />

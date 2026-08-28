@@ -271,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="md:hidden pb-3 pt-2 border-t border-white/[0.06] animate-fade-up space-y-2.5">
               {/* Tab buttons */}
               <div className="flex gap-1.5">
-                {TABS.map(({ id, label, icon: Icon }) => {
+                {TABS.filter(t => t.id === 'dashboard').map(({ id, label, icon: Icon }) => {
                   const active = activeTab === id;
                   return (
                     <button
