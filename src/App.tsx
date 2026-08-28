@@ -142,28 +142,45 @@ const MainLayout: React.FC = () => {
       </footer>
 
       {/* ── Bottom Navigation (Mobile Only) ──────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#080C14]/90 backdrop-blur-xl border-t border-white/[0.08] px-2 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#080C14]/90 backdrop-blur-xl border-t border-white/[0.08] px-2 pb-[env(safe-area-inset-bottom)] animate-fade-up" style={{ animationDuration: '0.4s' }}>
         <div className="flex items-center justify-around h-16">
           <button
             onClick={() => setActiveTab('transactions')}
-            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeTab === 'transactions' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`group relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 ${activeTab === 'transactions' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <ListOrdered className="w-5 h-5" strokeWidth={activeTab === 'transactions' ? 2.5 : 2} />
-            <span className="text-[10px] font-semibold tracking-wide">Transactions</span>
+            <div className={`relative flex items-center justify-center transition-all duration-300 ease-bounce ${activeTab === 'transactions' ? '-translate-y-1 scale-110 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'scale-100'}`}>
+              <ListOrdered className="w-5 h-5" strokeWidth={activeTab === 'transactions' ? 2.5 : 2} />
+            </div>
+            <span className={`text-[10px] font-semibold tracking-wide transition-all duration-300 ${activeTab === 'transactions' ? 'opacity-100 font-bold' : 'opacity-80'}`}>Transactions</span>
+            
+            {/* Active indicator dot */}
+            <div className={`absolute bottom-1 w-1 h-1 rounded-full bg-indigo-400 transition-all duration-300 ${activeTab === 'transactions' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
           </button>
+          
           <button
             onClick={() => setActiveTab('budget')}
-            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeTab === 'budget' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`group relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 ${activeTab === 'budget' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <Target className="w-5 h-5" strokeWidth={activeTab === 'budget' ? 2.5 : 2} />
-            <span className="text-[10px] font-semibold tracking-wide">Budget</span>
+            <div className={`relative flex items-center justify-center transition-all duration-300 ease-bounce ${activeTab === 'budget' ? '-translate-y-1 scale-110 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'scale-100'}`}>
+              <Target className="w-5 h-5" strokeWidth={activeTab === 'budget' ? 2.5 : 2} />
+            </div>
+            <span className={`text-[10px] font-semibold tracking-wide transition-all duration-300 ${activeTab === 'budget' ? 'opacity-100 font-bold' : 'opacity-80'}`}>Budget</span>
+            
+            {/* Active indicator dot */}
+            <div className={`absolute bottom-1 w-1 h-1 rounded-full bg-indigo-400 transition-all duration-300 ${activeTab === 'budget' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
           </button>
+          
           <button
             onClick={() => setActiveTab('recurring')}
-            className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${activeTab === 'recurring' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+            className={`group relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 active:scale-90 ${activeTab === 'recurring' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <RefreshCw className="w-5 h-5" strokeWidth={activeTab === 'recurring' ? 2.5 : 2} />
-            <span className="text-[10px] font-semibold tracking-wide">Recurring</span>
+            <div className={`relative flex items-center justify-center transition-all duration-300 ease-bounce ${activeTab === 'recurring' ? '-translate-y-1 scale-110 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'scale-100'}`}>
+              <RefreshCw className="w-5 h-5" strokeWidth={activeTab === 'recurring' ? 2.5 : 2} />
+            </div>
+            <span className={`text-[10px] font-semibold tracking-wide transition-all duration-300 ${activeTab === 'recurring' ? 'opacity-100 font-bold' : 'opacity-80'}`}>Recurring</span>
+            
+            {/* Active indicator dot */}
+            <div className={`absolute bottom-1 w-1 h-1 rounded-full bg-indigo-400 transition-all duration-300 ${activeTab === 'recurring' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
           </button>
         </div>
       </nav>
